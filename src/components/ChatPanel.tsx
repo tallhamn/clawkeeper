@@ -117,27 +117,10 @@ export function ChatPanel({ isOpen, onClose, habits, tasks, currentHour, onActio
       {/* Panel */}
       <div className="fixed inset-y-0 right-0 w-full sm:w-96 bg-white shadow-2xl z-50 flex flex-col border-l border-stone-200">
         {/* Header */}
-        <div className="px-4 py-3 border-b border-stone-200 flex items-center justify-between bg-gradient-to-r from-amber-50 to-orange-50">
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center">
-              <svg
-                className="w-4 h-4 text-white"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-                strokeWidth={2}
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
-                />
-              </svg>
-            </div>
-            <div>
-              <h3 className="font-medium text-stone-800 text-sm">Planning</h3>
-              <p className="text-xs text-stone-500">Powered by Claude</p>
-            </div>
+        <div className="px-4 py-3 border-b border-stone-200 flex items-center justify-between bg-white">
+          <div>
+            <h3 className="text-xs font-semibold text-stone-500 uppercase tracking-wider">Planning</h3>
+            <p className="text-xs text-stone-400 mt-0.5">Powered by Claude</p>
           </div>
           <button
             onClick={onClose}
@@ -184,7 +167,7 @@ export function ChatPanel({ isOpen, onClose, habits, tasks, currentHour, onActio
                               },
                             ]);
                           }}
-                          className="px-3 py-1.5 text-xs bg-amber-100 text-amber-700 rounded-lg hover:bg-amber-200 transition-colors flex items-center gap-1"
+                          className="px-3 py-1.5 text-xs bg-kyoto-light text-kyoto-red rounded-lg hover:bg-kyoto-medium transition-colors flex items-center gap-1"
                         >
                           <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                             <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
@@ -246,13 +229,13 @@ export function ChatPanel({ isOpen, onClose, habits, tasks, currentHour, onActio
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleSend()}
               placeholder="What do you want to work on?"
-              className="flex-1 px-4 py-2.5 bg-white border border-stone-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-transparent"
+              className="flex-1 px-4 py-2.5 bg-white border border-stone-200 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-kyoto-red"
               disabled={isTyping}
             />
             <button
               onClick={handleSend}
               disabled={!input.trim() || isTyping}
-              className="px-4 py-2.5 bg-stone-800 text-white rounded-xl hover:bg-stone-900 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              className="px-4 py-2.5 bg-kyoto-red text-white rounded-lg hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-opacity"
             >
               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M5 12h14M12 5l7 7-7 7" />

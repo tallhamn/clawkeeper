@@ -42,10 +42,10 @@ export function AddTaskRow({ onAdd }: AddTaskRowProps) {
             }
           }}
           placeholder="New task..."
-          className="flex-1 px-3 py-2 text-sm bg-white border border-stone-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-rose-400"
+          className="flex-1 px-3 py-2 text-sm bg-white border border-stone-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-kyoto-red"
           autoFocus
         />
-        <button onClick={handleAdd} className="px-4 py-2 text-sm bg-stone-800 text-white rounded-xl hover:bg-stone-900">
+        <button onClick={handleAdd} className="px-4 py-2 text-sm bg-kyoto-red text-white rounded-lg hover:opacity-90 transition-opacity">
           Add
         </button>
         <button

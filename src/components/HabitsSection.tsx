@@ -34,31 +34,12 @@ export function HabitsSection({
   );
 
   return (
-    <div className="bg-white rounded-2xl shadow-sm border border-stone-200/80 overflow-hidden">
-      <div className="px-5 py-3 border-b border-stone-100 flex items-center justify-between">
-        <div className="flex items-center gap-2.5">
-          <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center">
-            <svg
-              className="w-3.5 h-3.5 text-white"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-              strokeWidth={2}
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-              />
-            </svg>
-          </div>
-          <span className="font-medium text-stone-800 text-sm">Habits</span>
-        </div>
-        <div className="flex items-center gap-1.5">
-          <span className="text-base font-semibold text-emerald-600">{completedHabitsToday}</span>
-          <span className="text-stone-300">/</span>
-          <span className="text-stone-400 text-sm">{totalHabits}</span>
-        </div>
+    <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
+      <div className="px-4 py-3 border-b border-stone-100 flex items-center justify-between">
+        <span className="text-xs font-semibold text-stone-500 uppercase tracking-wider">Habits</span>
+        <span className="text-sm text-stone-400">
+          {completedHabitsToday} of {totalHabits}
+        </span>
       </div>
       <div className="px-5 divide-y divide-stone-50">
         {sortedHabits.map((habit) => {

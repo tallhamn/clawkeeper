@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import type { Task } from '@/lib/types';
-import { TASK_DEPTH_COLORS } from '@/lib/constants';
 
 interface TaskItemProps {
   task: Task;
@@ -31,8 +30,6 @@ export function TaskItem({
   if (!showCompleted && task.completed && visibleChildren.length === 0) {
     return null;
   }
-
-  const depthColor = TASK_DEPTH_COLORS[depth % TASK_DEPTH_COLORS.length];
 
   const handleToggle = () => {
     if (!task.completed) {
@@ -65,7 +62,7 @@ export function TaskItem({
   };
 
   return (
-    <div className={`${depth > 0 ? `ml-5 pl-3 border-l-2 ${depthColor}` : ''}`}>
+    <div className={`${depth > 0 ? 'ml-5 pl-3 border-l-2 border-l-stone-200' : ''}`}>
       <div className={`group py-2 ${task.completed && !showReflectionInput ? 'opacity-40' : ''}`}>
         <div className="flex items-start gap-2.5">
           <button
@@ -73,8 +70,8 @@ export function TaskItem({
             className={`mt-0.5 w-4 h-4 rounded border-2 flex items-center justify-center transition-all flex-shrink-0
               ${
                 task.completed
-                  ? 'bg-emerald-500 border-emerald-500 text-white'
-                  : 'border-stone-300 hover:border-emerald-400'
+                  ? 'bg-kyoto-red border-kyoto-red text-white'
+                  : 'border-stone-300 hover:border-stone-400'
               }`}
           >
             {task.completed && (
@@ -88,22 +85,7 @@ export function TaskItem({
               {task.text}
             </span>
             {task.reflection && !showReflectionInput && (
-              <p className="text-xs text-amber-600 mt-1 flex items-start gap-1">
-                <svg
-                  className="w-3 h-3 mt-0.5 flex-shrink-0"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                  strokeWidth={2}
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"
-                  />
-                </svg>
-                {task.reflection}
-              </p>
+              <p className="text-xs text-kyoto-red mt-1">{task.reflection}</p>
             )}
           </div>
           {!task.completed && (
@@ -134,10 +116,10 @@ export function TaskItem({
                 }
               }}
               placeholder="Subtask..."
-              className="flex-1 px-3 py-1.5 text-sm bg-white border border-stone-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-rose-300"
+              className="flex-1 px-3 py-1.5 text-sm bg-white border border-stone-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-kyoto-red"
               autoFocus
             />
-            <button onClick={handleAddSubtask} className="px-3 py-1.5 text-xs bg-stone-800 text-white rounded-lg">
+            <button onClick={handleAddSubtask} className="px-3 py-1.5 text-xs bg-kyoto-red text-white rounded-lg hover:opacity-90 transition-opacity">
               Add
             </button>
             <button
@@ -154,23 +136,23 @@ export function TaskItem({
 
         {/* Reflection input after completing */}
         {showReflectionInput && (
-          <div className="mt-2 ml-6 p-3 bg-amber-50 rounded-lg border border-amber-200">
-            <p className="text-xs text-amber-700 mb-2 font-medium">How did it go? (optional)</p>
+          <div className="mt-2 ml-6 p-3 bg-kyoto-light rounded-lg border border-kyoto-medium">
+            <p className="text-xs text-kyoto-red mb-2 font-medium">How did it go? (optional)</p>
             <textarea
               value={reflectionText}
               onChange={(e) => setReflectionText(e.target.value)}
               placeholder="What worked? What would you do differently?"
-              className="w-full px-3 py-2 text-sm bg-white border border-amber-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-400 resize-none"
+              className="w-full px-3 py-2 text-sm bg-white border border-stone-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-kyoto-red resize-none"
               rows={2}
               autoFocus
             />
             <div className="flex justify-end gap-2 mt-2">
-              <button onClick={handleSkipReflection} className="px-3 py-1 text-xs text-stone-500 hover:text-stone-700">
+              <button onClick={handleSkipReflection} className="px-3 py-1 text-xs text-stone-600 hover:bg-stone-50 rounded transition-colors">
                 Skip
               </button>
               <button
                 onClick={handleSaveReflection}
-                className="px-3 py-1 text-xs bg-amber-500 text-white rounded hover:bg-amber-600"
+                className="px-4 py-2 text-xs bg-kyoto-red text-white rounded-lg hover:opacity-90 transition-opacity"
               >
                 Save
               </button>

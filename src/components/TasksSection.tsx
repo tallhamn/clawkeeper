@@ -47,27 +47,10 @@ export function TasksSection({ tasks, onToggle, onAddReflection, onAddSubtask, o
   });
 
   return (
-    <div className="bg-white rounded-2xl shadow-sm border border-stone-200/80 overflow-hidden">
-      <div className="px-5 py-3 border-b border-stone-100">
+    <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
+      <div className="px-4 py-3 border-b border-stone-100">
         <div className="flex items-center justify-between mb-3">
-          <div className="flex items-center gap-2.5">
-            <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-rose-400 to-pink-500 flex items-center justify-center">
-              <svg
-                className="w-3.5 h-3.5 text-white"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-                strokeWidth={2}
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
-                />
-              </svg>
-            </div>
-            <span className="font-medium text-stone-800 text-sm">Tasks</span>
-          </div>
+          <span className="text-xs font-semibold text-stone-500 uppercase tracking-wider">Tasks</span>
         </div>
 
         {/* Search and filters */}
@@ -91,7 +74,7 @@ export function TasksSection({ tasks, onToggle, onAddReflection, onAddSubtask, o
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search tasks..."
-              className="w-full pl-9 pr-3 py-1.5 text-sm bg-stone-50 border border-stone-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-rose-300 focus:bg-white transition-colors"
+              className="w-full pl-9 pr-3 py-1.5 text-sm bg-stone-50 border border-stone-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-kyoto-red focus:bg-white transition-colors"
             />
             {searchQuery && (
               <button
@@ -112,7 +95,7 @@ export function TasksSection({ tasks, onToggle, onAddReflection, onAddSubtask, o
             >
               <div
                 className={`w-3.5 h-3.5 rounded border-2 flex items-center justify-center transition-colors ${
-                  showCompleted ? 'bg-rose-500 border-rose-500' : 'border-stone-300'
+                  showCompleted ? 'bg-kyoto-red border-kyoto-red' : 'border-stone-300'
                 }`}
               >
                 {showCompleted && (
@@ -152,7 +135,7 @@ export function TasksSection({ tasks, onToggle, onAddReflection, onAddSubtask, o
         ) : showCompleted ? (
           <div className="py-8 text-center text-stone-400 text-sm">No tasks yet</div>
         ) : (
-          <div className="py-8 text-center text-stone-400 text-sm">All tasks complete! 🎉</div>
+          <div className="py-8 text-center text-stone-400 text-sm">All tasks complete</div>
         )}
       </div>
 

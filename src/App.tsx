@@ -238,42 +238,51 @@ function App() {
   return (
     <div className="min-h-screen">
       <div className={`transition-all duration-300 ${chatOpen ? 'mr-0 sm:mr-96' : ''}`}>
-        <div className="max-w-2xl mx-auto px-4 py-8">
+        <div className="max-w-2xl mx-auto px-4 py-6">
           {/* Header */}
-          <div className="mb-2 flex items-center justify-between">
-            <div>
-              <h1 className="text-2xl font-semibold text-stone-800">Today</h1>
+          <div className="bg-white rounded-2xl shadow-sm p-4 mb-5">
+            <div className="flex items-start justify-between mb-3">
+              <div>
+                <h1 className="text-lg font-semibold text-stone-800 mb-1">
+                  {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' })}
+                </h1>
+                <div className="flex items-center gap-2">
+                  <p className="text-sm text-stone-400">
+                    {new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}
+                  </p>
+                  <select
+                    value={currentHour}
+                    onChange={(e) => setCurrentHour(Number(e.target.value))}
+                    className="text-xs bg-stone-50 border border-stone-200 rounded px-2 py-0.5 text-stone-500 focus:outline-none focus:ring-1 focus:ring-kyoto-red"
+                  >
+                    {[6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23].map((h) => (
+                      <option key={h} value={h}>
+                        {h}:00
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+              <div className="flex flex-col items-end gap-2">
+                <div className="text-right">
+                  <div className="text-2xl font-semibold text-stone-800">
+                    {habits.filter(h => h.completedToday).length}
+                  </div>
+                  <div className="text-xs text-stone-400">of {habits.length}</div>
+                </div>
+              </div>
             </div>
-            <div className="flex items-center gap-2">
-              <select
-                value={currentHour}
-                onChange={(e) => setCurrentHour(Number(e.target.value))}
-                className="text-xs bg-stone-100 border-0 rounded-lg px-2 py-1.5 text-stone-500 focus:outline-none"
-              >
-                {[6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23].map((h) => (
-                  <option key={h} value={h}>
-                    {h}:00
-                  </option>
-                ))}
-              </select>
+
+            <div className="border-t border-stone-100 pt-3 mt-3 flex items-center justify-between">
+              <p className="text-sm text-stone-600 flex-1">{coachMessage}</p>
               <button
                 onClick={() => setChatOpen(true)}
-                className="flex items-center gap-2 px-3 py-1.5 bg-gradient-to-r from-amber-500 to-orange-500 text-white text-sm rounded-lg hover:from-amber-600 hover:to-orange-600 transition-colors shadow-sm"
+                className="ml-3 px-3 py-1.5 bg-kyoto-light text-kyoto-red text-xs font-semibold rounded-lg hover:bg-kyoto-medium transition-colors"
               >
-                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"
-                  />
-                </svg>
                 Plan
               </button>
             </div>
           </div>
-
-        {/* Coach Message */}
-        <p className="text-stone-600 text-sm mb-6 px-1">{coachMessage}</p>
 
         {/* Habits Section */}
         <HabitsSection
@@ -287,12 +296,8 @@ function App() {
           onAddHabit={addHabit}
         />
 
-        {/* Divider */}
-        <div className="flex items-center gap-4 my-6">
-          <div className="flex-1 h-px bg-stone-200" />
-          <span className="text-xs text-stone-400 uppercase tracking-wider">Tasks</span>
-          <div className="flex-1 h-px bg-stone-200" />
-        </div>
+        {/* Spacer */}
+        <div className="h-5" />
 
         {/* Tasks Section */}
         <TasksSection

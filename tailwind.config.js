@@ -5,7 +5,18 @@ export default {
     "./src/**/*.{js,ts,jsx,tsx}",
   ],
   theme: {
-    extend: {},
+    extend: {
+      colors: {
+        kyoto: {
+          red: '#c53d2d',
+          light: '#fef2f1',
+          medium: '#f8d7d4',
+        },
+      },
+      fontSize: {
+        'base': '15px',
+      },
+    },
   },
   plugins: [],
 }

@@ -45,12 +45,12 @@ export function AddHabitRow({ onAdd }: AddHabitRowProps) {
             }
           }}
           placeholder="New habit..."
-          className="flex-1 px-3 py-2 text-sm bg-white border border-stone-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-400"
+          className="flex-1 px-3 py-2 text-sm bg-stone-50 border border-stone-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-kyoto-red"
           autoFocus
         />
         <button
           onClick={handleAdd}
-          className="px-4 py-2 text-sm bg-amber-500 text-white rounded-xl hover:bg-amber-600"
+          className="px-4 py-2 text-sm bg-kyoto-red text-white rounded-lg hover:opacity-90 transition-opacity"
         >
           Add
         </button>
@@ -60,13 +60,13 @@ export function AddHabitRow({ onAdd }: AddHabitRowProps) {
           <button
             key={key}
             onClick={() => setTimeWindow(key as TimeWindow)}
-            className={`px-2 py-1 text-xs rounded-lg transition-colors ${
+            className={`px-2 py-1 text-xs rounded transition-colors ${
               timeWindow === key
-                ? 'bg-amber-500 text-white'
-                : 'bg-white text-stone-500 border border-stone-200 hover:border-amber-300'
+                ? 'bg-kyoto-red text-white'
+                : 'bg-white text-stone-600 border border-stone-200 hover:bg-stone-50'
             }`}
           >
-            {w.icon} {w.label}
+            {w.label}
           </button>
         ))}
         <button

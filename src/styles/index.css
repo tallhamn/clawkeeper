@@ -4,7 +4,8 @@
 
 @layer base {
   body {
-    @apply bg-gradient-to-b from-stone-50 to-orange-50/20;
+    @apply bg-stone-100 text-stone-700;
+    font-size: 15px;
   }
 }
 
