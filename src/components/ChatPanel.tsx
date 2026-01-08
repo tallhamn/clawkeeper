@@ -20,11 +20,27 @@ interface ChatPanelProps {
 }
 
 export function ChatPanel({ isOpen, onClose, habits, tasks, currentHour, onAction }: ChatPanelProps) {
+  // Count total reflections from habits and tasks
+  const countReflections = () => {
+    let count = 0;
+    // Count habit reflections
+    habits.forEach((habit) => {
+      count += habit.reflections?.length || 0;
+    });
+    // Count task reflections recursively
+    const countTaskReflections = (task: Task): void => {
+      count += task.reflections?.length || 0;
+      task.children?.forEach(countTaskReflections);
+    };
+    tasks.forEach(countTaskReflections);
+    return count;
+  };
+
   const [messages, setMessages] = useState<Message[]>([
     {
       id: '1',
       role: 'assistant',
-      text: `I can see your ${habits.length} habits and ${tasks.length} projects. What would you like to work on?`,
+      text: `I can see your ${habits.length} habits and ${tasks.length} projects, and ${countReflections()} reflections. How can I help?`,
     },
   ]);
   const [input, setInput] = useState('');
@@ -33,8 +49,28 @@ export function ChatPanel({ isOpen, onClose, habits, tasks, currentHour, onActio
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
+  // Update the initial message when habits or tasks change
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    setMessages((prev) => {
+      if (prev.length > 0 && prev[0].id === '1') {
+        // Update the first message with current counts
+        return [
+          {
+            ...prev[0],
+            text: `I can see your ${habits.length} habits and ${tasks.length} projects, and ${countReflections()} reflections. How can I help?`,
+          },
+          ...prev.slice(1),
+        ];
+      }
+      return prev;
+    });
+  }, [habits, tasks]);
+
+  useEffect(() => {
+    // scrollIntoView might not exist in test environment
+    if (messagesEndRef.current && typeof messagesEndRef.current.scrollIntoView === 'function') {
+      messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
+    }
   }, [messages, streamingText]);
 
   useEffect(() => {
@@ -71,7 +107,7 @@ export function ChatPanel({ isOpen, onClose, habits, tasks, currentHour, onActio
       }
 
       // Parse actions from response
-      const actions = parseActionsFromResponse(fullResponse, tasks);
+      const actions = parseActionsFromResponse(fullResponse, habits, tasks);
 
       // Add complete message
       setIsTyping(false);
@@ -142,26 +178,34 @@ export function ChatPanel({ isOpen, onClose, habits, tasks, currentHour, onActio
                 <div className="text-xs text-rose-600 bg-rose-50 px-3 py-2 rounded-lg max-w-[85%]">{msg.text}</div>
               ) : (
                 <div className={`max-w-[85%] ${msg.role === 'user' ? 'order-1' : 'order-2'}`}>
-                  <div
-                    className={`px-4 py-2.5 rounded-2xl text-sm leading-relaxed whitespace-pre-wrap ${
-                      msg.role === 'user'
-                        ? 'bg-stone-800 text-white rounded-br-md'
-                        : 'bg-stone-100 text-stone-800 rounded-bl-md'
-                    }`}
-                  >
-                    {msg.text}
-                  </div>
+                  {/* Only show text bubble if there's text after stripping JSON */}
+                  {stripJsonActionBlocks(msg.text) && (
+                    <div
+                      className={`px-4 py-2.5 rounded-2xl text-sm leading-relaxed whitespace-pre-wrap ${
+                        msg.role === 'user'
+                          ? 'bg-stone-800 text-white rounded-br-md'
+                          : 'bg-stone-100 text-stone-800 rounded-bl-md'
+                      }`}
+                    >
+                      {stripJsonActionBlocks(msg.text)}
+                    </div>
+                  )}
 
                   {/* Action buttons */}
                   {msg.actions && msg.actions.length > 0 && (
                     <div className="mt-2 flex flex-wrap gap-2">
-                      {msg.actions.map((action, i) => (
+                      {msg.actions.map((action, actionIndex) => (
                         <button
-                          key={i}
+                          key={actionIndex}
                           onClick={() => {
                             onAction(action);
+                            // Remove only this specific action button and add success message
                             setMessages((prev) => [
-                              ...prev,
+                              ...prev.map((m) =>
+                                m.id === msg.id
+                                  ? { ...m, actions: m.actions?.filter((_, idx) => idx !== actionIndex) }
+                                  : m
+                              ),
                               {
                                 id: generateId(),
                                 role: 'system',
@@ -185,11 +229,11 @@ export function ChatPanel({ isOpen, onClose, habits, tasks, currentHour, onActio
           ))}
 
           {/* Streaming message */}
-          {isTyping && streamingText && (
+          {isTyping && streamingText && stripJsonActionBlocks(streamingText) && (
             <div className="flex justify-start">
               <div className="max-w-[85%]">
                 <div className="px-4 py-2.5 rounded-2xl rounded-bl-md text-sm leading-relaxed bg-stone-100 text-stone-800 whitespace-pre-wrap">
-                  {streamingText}
+                  {stripJsonActionBlocks(streamingText)}
                   <span className="inline-block w-1 h-4 bg-stone-800 ml-0.5 animate-pulse" />
                 </div>
               </div>
@@ -254,66 +298,214 @@ export function ChatPanel({ isOpen, onClose, habits, tasks, currentHour, onActio
 }
 
 /**
+ * Strip json-action code blocks from text (so they're not visible to user)
+ * Also handles incomplete blocks during streaming
+ */
+function stripJsonActionBlocks(text: string): string {
+  // Remove complete json-action blocks
+  let cleaned = text.replace(/```json-action\s*\n[\s\S]*?\n```/g, '');
+
+  // During streaming, also remove incomplete blocks
+  // Match ``` followed by optional whitespace/newlines and "json" or "json-action"
+  // This catches: ``` or ```j or ```json or ```json-a or ```json-action followed by anything
+  cleaned = cleaned.replace(/```\s*j?s?o?n?-?a?c?t?i?o?n?[\s\S]*$/g, '');
+
+  // Collapse multiple consecutive newlines (more than 2) into just 2
+  cleaned = cleaned.replace(/\n{3,}/g, '\n\n');
+
+  return cleaned.trim();
+}
+
+/**
  * Parse suggested actions from Claude's response
  */
-function parseActionsFromResponse(text: string, tasks: Task[]): LLMAction[] {
+function parseActionsFromResponse(text: string, habits: Habit[], tasks: Task[]): LLMAction[] {
   const actions: LLMAction[] = [];
 
-  // Look for subtask suggestions with bullet points
-  const lines = text.split('\n');
-  const bulletPoints: string[] = [];
-  let parentTaskName = '';
+  // Look for json-action code blocks
+  const jsonActionRegex = /```json-action\s*\n([\s\S]*?)\n```/g;
+  let match;
 
-  for (let i = 0; i < lines.length; i++) {
-    const line = lines[i].trim();
+  while ((match = jsonActionRegex.exec(text)) !== null) {
+    try {
+      const actionData = JSON.parse(match[1].trim());
 
-    // Check if this mentions a specific task
-    if (line.toLowerCase().includes('for') || line.toLowerCase().includes('task:')) {
-      for (const task of tasks) {
-        if (line.toLowerCase().includes(task.text.toLowerCase().slice(0, 15))) {
-          parentTaskName = task.text;
-          break;
+      // Task actions
+      if (actionData.type === 'add_task' && actionData.text) {
+        actions.push({
+          type: 'add_task',
+          text: actionData.text,
+          label: actionData.label || `Add "${actionData.text}"`,
+        });
+      } else if (actionData.type === 'delete_task' && actionData.taskText) {
+        const taskId = findTaskIdByText(tasks, actionData.taskText);
+        if (taskId) {
+          actions.push({
+            type: 'delete_task',
+            taskId,
+            taskText: actionData.taskText,
+            label: actionData.label || `Delete "${actionData.taskText}"`,
+          });
+        }
+      } else if (actionData.type === 'add_subtask' && actionData.parentText && actionData.text) {
+        const parentId = findTaskIdByText(tasks, actionData.parentText);
+        if (parentId) {
+          actions.push({
+            type: 'add_subtask',
+            parentId,
+            text: actionData.text,
+            label: actionData.label || `Add "${actionData.text}"`,
+          });
+        }
+      } else if (actionData.type === 'edit_task' && actionData.taskText && actionData.newText) {
+        const taskId = findTaskIdByText(tasks, actionData.taskText);
+        if (taskId) {
+          actions.push({
+            type: 'edit_task',
+            taskId,
+            text: actionData.newText,
+            label: actionData.label || `Update task`,
+          });
         }
       }
-    }
 
-    // Collect bullet points (potential subtasks)
-    if (line.match(/^[•\-\*]\s+/)) {
-      const subtask = line.replace(/^[•\-\*]\s+/, '').trim();
-      if (subtask.length > 5 && subtask.length < 100) {
-        bulletPoints.push(subtask);
+      // Habit actions
+      else if (actionData.type === 'add_habit' && actionData.text) {
+        actions.push({
+          type: 'add_habit',
+          text: actionData.text,
+          repeatIntervalHours: actionData.repeatIntervalHours || 24,
+          label: actionData.label || `Add habit "${actionData.text}"`,
+        });
+      } else if (actionData.type === 'delete_habit' && actionData.habitText) {
+        const habitId = findHabitIdByText(habits, actionData.habitText);
+        if (habitId) {
+          actions.push({
+            type: 'delete_habit',
+            habitId,
+            habitText: actionData.habitText,
+            label: actionData.label || `Delete "${actionData.habitText}"`,
+          });
+        }
+      } else if (actionData.type === 'edit_habit' && actionData.habitText) {
+        const habitId = findHabitIdByText(habits, actionData.habitText);
+        if (habitId) {
+          actions.push({
+            type: 'edit_habit',
+            habitId,
+            text: actionData.newText,
+            repeatIntervalHours: actionData.repeatIntervalHours,
+            label: actionData.label || `Update habit`,
+          });
+        }
       }
+    } catch (e) {
+      console.warn('Failed to parse JSON action:', e);
     }
   }
 
-  // If we found 2-5 bullet points and a parent task, suggest adding them
-  if (bulletPoints.length >= 2 && bulletPoints.length <= 5 && parentTaskName) {
-    // Find the parent task ID
-    const findTaskId = (tasks: Task[], name: string): string | null => {
-      for (const task of tasks) {
-        if (task.text === name) return task.id;
-        if (task.children) {
-          const found = findTaskId(task.children, name);
-          if (found) return found;
+  // Fallback: Look for subtask suggestions with bullet points (legacy behavior)
+  if (actions.length === 0) {
+    const lines = text.split('\n');
+    const bulletPoints: string[] = [];
+    let parentTaskName = '';
+
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i].trim();
+
+      // Check if this mentions a specific task
+      if (line.toLowerCase().includes('for') || line.toLowerCase().includes('task:')) {
+        for (const task of tasks) {
+          if (line.toLowerCase().includes(task.text.toLowerCase().slice(0, 15))) {
+            parentTaskName = task.text;
+            break;
+          }
         }
       }
-      return null;
-    };
 
-    const parentId = findTaskId(tasks, parentTaskName);
+      // Collect bullet points (potential subtasks)
+      if (line.match(/^[•\-\*]\s+/)) {
+        const subtask = line.replace(/^[•\-\*]\s+/, '').trim();
+        if (subtask.length > 5 && subtask.length < 100) {
+          bulletPoints.push(subtask);
+        }
+      }
+    }
 
-    if (parentId) {
-      for (const subtask of bulletPoints) {
-        actions.push({
-          type: 'add_subtask',
-          parentId,
-          text: subtask,
-          label: `Add "${subtask.slice(0, 30)}${subtask.length > 30 ? '...' : ''}"`,
-        });
+    // If we found 2-5 bullet points and a parent task, suggest adding them
+    if (bulletPoints.length >= 2 && bulletPoints.length <= 5 && parentTaskName) {
+      const parentId = findTaskIdByText(tasks, parentTaskName);
+
+      if (parentId) {
+        for (const subtask of bulletPoints) {
+          actions.push({
+            type: 'add_subtask',
+            parentId,
+            text: subtask,
+            label: `Add "${subtask.slice(0, 30)}${subtask.length > 30 ? '...' : ''}"`,
+          });
+        }
       }
     }
   }
 
   return actions;
+}
+
+/**
+ * Helper function to find task ID by text
+ * Only matches active (non-completed) tasks
+ */
+function findTaskIdByText(tasks: Task[], text: string): string | null {
+  const searchText = text.toLowerCase();
+
+  const search = (taskList: Task[]): string | null => {
+    for (const task of taskList) {
+      // Skip completed tasks - they're read-only for historical context
+      if (task.completed) {
+        continue;
+      }
+
+      // Try exact match first
+      if (task.text.toLowerCase() === searchText) {
+        return task.id;
+      }
+
+      // Try partial match (for "wine task" matching "Buy wine for dinner")
+      if (task.text.toLowerCase().includes(searchText) || searchText.includes(task.text.toLowerCase())) {
+        return task.id;
+      }
+
+      // Search children (only if parent is not completed)
+      if (task.children && task.children.length > 0) {
+        const found = search(task.children);
+        if (found) return found;
+      }
+    }
+    return null;
+  };
+
+  return search(tasks);
+}
+
+/**
+ * Helper function to find habit ID by text
+ */
+function findHabitIdByText(habits: Habit[], text: string): string | null {
+  const searchText = text.toLowerCase();
+
+  for (const habit of habits) {
+    // Try exact match first
+    if (habit.text.toLowerCase() === searchText) {
+      return habit.id;
+    }
+
+    // Try partial match
+    if (habit.text.toLowerCase().includes(searchText) || searchText.includes(habit.text.toLowerCase())) {
+      return habit.id;
+    }
+  }
+
+  return null;
 }
 

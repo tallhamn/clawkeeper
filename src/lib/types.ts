@@ -22,7 +22,7 @@ export interface Habit {
   text: string;
   repeatIntervalHours: number; // How often the habit repeats (default: 24)
   lastCompleted: string | null; // ISO timestamp of when it was last completed
-  streak: number;
+  totalCompletions: number; // All-time completion count
   reflections: string[];
 }
 
@@ -32,7 +32,7 @@ export interface Task {
   text: string;
   completed: boolean;
   completedAt: string | null;  // ISO date string (YYYY-MM-DD)
-  reflection: string | null;
+  reflections: string[];
   children: Task[];
 }
 
@@ -55,6 +55,12 @@ export type LLMActionType =
   | 'add_task'
   | 'add_subtask'
   | 'complete_task'
+  | 'delete_task'
+  | 'edit_task'
+  | 'add_habit'
+  | 'delete_habit'
+  | 'edit_habit'
+  | 'replace_state'
   | 'filter_tasks'
   | 'restructure_tasks';
 
@@ -64,8 +70,13 @@ export interface LLMAction {
   parentText?: string;
   parentId?: string;
   taskText?: string;
+  taskId?: string;
+  habitText?: string;
+  habitId?: string;
+  repeatIntervalHours?: number;
   query?: string;
   newTasks?: Task[];
+  newState?: AppState;  // For replace_state action
   label?: string; // Button label like "Add these subtasks"
 }
 

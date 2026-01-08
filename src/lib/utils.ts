@@ -118,3 +118,49 @@ export function formatInterval(hours: number): string {
     return `${days}d`;
   }
 }
+
+/**
+ * Format time since last completion
+ */
+export function formatTimeSince(lastCompleted: string | null): string {
+  if (!lastCompleted) return 'not done yet';
+
+  const now = Date.now();
+  const completedTime = new Date(lastCompleted).getTime();
+  const diffMs = now - completedTime;
+  const diffMinutes = Math.floor(diffMs / (60 * 1000));
+  const diffHours = Math.floor(diffMs / (60 * 60 * 1000));
+  const diffDays = Math.floor(diffMs / (24 * 60 * 60 * 1000));
+
+  if (diffMinutes < 1) return 'done just now';
+  if (diffMinutes < 60) return `done ${diffMinutes}m ago`;
+  if (diffHours < 24) return `done ${diffHours}h ago`;
+  return `done ${diffDays}d ago`;
+}
+
+/**
+ * Format countdown until habit is available again
+ */
+export function formatCountdown(lastCompleted: string | null, intervalHours: number): string {
+  if (!lastCompleted) return 'ready now';
+
+  const lastCompletedTime = new Date(lastCompleted).getTime();
+  const now = Date.now();
+  const intervalMs = intervalHours * 60 * 60 * 1000;
+  const nextAvailableTime = lastCompletedTime + intervalMs;
+  const msUntilAvailable = nextAvailableTime - now;
+
+  if (msUntilAvailable <= 0) return 'ready now';
+
+  const hours = Math.floor(msUntilAvailable / (60 * 60 * 1000));
+  const minutes = Math.floor((msUntilAvailable % (60 * 60 * 1000)) / (60 * 1000));
+  const seconds = Math.floor((msUntilAvailable % (60 * 1000)) / 1000);
+
+  if (hours > 0) {
+    return `active again in ${hours}h${minutes}m${seconds}s`;
+  } else if (minutes > 0) {
+    return `active again in ${minutes}m${seconds}s`;
+  } else {
+    return `active again in ${seconds}s`;
+  }
+}

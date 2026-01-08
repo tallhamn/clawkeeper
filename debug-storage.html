@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Welltime Storage Debug</title>
+</head>
+<body>
+    <h1>Storage Debug Info</h1>
+    <pre id="output">Loading...</pre>
+
+    <script>
+        // Check if running in Tauri
+        const isTauri = '__TAURI__' in window;
+
+        let output = `Running in Tauri: ${isTauri}\n\n`;
+
+        if (isTauri) {
+            output += 'Tauri detected - filesystem should work\n';
+            output += 'Check the Tauri console for errors\n';
+        } else {
+            output += 'NOT in Tauri - running in browser mode\n';
+            output += 'Filesystem operations will fail\n';
+            output += 'Run with: npm run tauri:dev\n';
+        }
+
+        document.getElementById('output').textContent = output;
+    </script>
+</body>
+</html>

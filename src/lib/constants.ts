@@ -3,9 +3,9 @@
  */
 
 // Storage paths
-export const APP_DIR_NAME = '.welltime';
+// Local directory: ~/.welltime (iCloud can be configured later with proper entitlements)
+export const APP_DIR_NAME = '/.welltime';
 export const CURRENT_MD_FILE = 'current.md';
-export const CURRENT_JSON_FILE = 'data.json';
 export const HISTORY_DIR = 'history';
 
 // History management

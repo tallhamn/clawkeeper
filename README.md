@@ -45,8 +45,12 @@ An LLM-powered assistant that knows your full context — habits, tasks, streaks
 - "Help me break down the VP Sales hire"
 - "What have I learned about hiring?"
 - "I'm stuck on this task"
+- "Find gas stations near 123 Main St, Franklin, TN"
+- "What's a good place for lunch near me?"
 
 It responds with awareness of your history and can take actions: add tasks, create subtasks, restructure plans. Every action can be undone.
+
+**Web Search:** The assistant can search the web for real-time information like local businesses, addresses, prices, or current data. Just add your Tavily API key to `.env` (see Setup below).
 
 ## Markdown Storage
 
@@ -95,6 +99,37 @@ It's a personal tool for maintaining habits, tracking tasks, learning from exper
 5. **LLM assists, you decide** — AI helps plan, you stay in control
 6. **Plain text storage** — Your data, your format, forever readable
 7. **Undo everything** — No fear of experimentation
+
+---
+
+## Setup
+
+1. **Install dependencies:**
+   ```bash
+   npm install
+   ```
+
+2. **Configure API keys:**
+   Copy `.env.example` to `.env` and add your keys:
+   ```bash
+   cp .env.example .env
+   ```
+
+   Required:
+   - `VITE_ANTHROPIC_API_KEY` - Get from https://console.anthropic.com/
+
+   Optional (for web search):
+   - `VITE_TAVILY_API_KEY` - Get free key from https://tavily.com
+
+3. **Run the app:**
+   ```bash
+   npm run tauri:dev
+   ```
+
+4. **Build for production:**
+   ```bash
+   npm run tauri:build
+   ```
 
 ---
 

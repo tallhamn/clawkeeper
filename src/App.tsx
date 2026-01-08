@@ -1,13 +1,12 @@
 import { useState, useEffect } from 'react';
 import type { Habit, Task, LLMAction, AppState } from '@/lib/types';
 import { generateId, getTodayDate } from '@/lib/utils';
-import { EXAMPLE_HABITS, EXAMPLE_TASKS } from '@/lib/exampleData';
 import { useCoachMessage } from '@/hooks/useCoachMessage';
 import { HabitsSection } from '@/components/HabitsSection';
 import { TasksSection } from '@/components/TasksSection';
 import { ChatPanel } from '@/components/ChatPanel';
 import { UndoBar } from '@/components/UndoBar';
-import { initializeStorage, isInitialized, loadCurrentState, saveCurrentState } from '@/lib/storage';
+import { initializeStorage, isInitialized, loadCurrentState, saveCurrentState, archiveOldCompletedTasks, getDefaultState } from '@/lib/storage';
 
 function App() {
   const [habits, setHabits] = useState<Habit[]>([]);
@@ -16,6 +15,10 @@ function App() {
   const [chatOpen, setChatOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
+  const [showCompleted, setShowCompleted] = useState(false);
+
+  // Track which element is currently revealed (reflection input, edit controls, etc.)
+  const [revealedItem, setRevealedItem] = useState<{ type: 'habit' | 'task'; id: string; mode: 'reflection' | 'edit' | 'view-reflections' | 'add-subtask' } | null>(null);
 
   // Undo functionality
   const [undoState, setUndoState] = useState<AppState | null>(null);
@@ -27,27 +30,47 @@ function App() {
   // Initialize storage and load data on mount
   useEffect(() => {
     const initApp = async () => {
+      console.log('[Storage] Starting initialization...');
       try {
+        console.log('[Storage] Creating directory structure...');
         await initializeStorage();
+        console.log('[Storage] Checking if initialized...');
         const initialized = await isInitialized();
+        console.log('[Storage] Is initialized:', initialized);
 
         if (initialized) {
+          console.log('[Storage] Loading existing state...');
           const state = await loadCurrentState();
           if (state) {
-            setHabits(state.habits);
-            setTasks(state.tasks);
+            console.log('[Storage] Loaded state:', {
+              habits: state.habits.length,
+              tasks: state.tasks.length
+            });
+
+            // Archive old completed tasks
+            console.log('[Storage] Archiving old completed tasks...');
+            const archivedState = await archiveOldCompletedTasks(state);
+
+            setHabits(archivedState.habits);
+            setTasks(archivedState.tasks);
           }
         } else {
-          // First launch: use example data
-          setHabits(EXAMPLE_HABITS);
-          setTasks(EXAMPLE_TASKS);
-          await saveCurrentState({ habits: EXAMPLE_HABITS, tasks: EXAMPLE_TASKS });
+          // First launch: use default data
+          console.log('[Storage] First launch - using default data');
+          const defaultState = getDefaultState();
+          setHabits(defaultState.habits);
+          setTasks(defaultState.tasks);
+          console.log('[Storage] Saving initial state...');
+          await saveCurrentState(defaultState);
+          console.log('[Storage] Initial state saved');
         }
       } catch (error) {
-        console.error('Failed to initialize storage:', error);
-        // Fallback to example data
-        setHabits(EXAMPLE_HABITS);
-        setTasks(EXAMPLE_TASKS);
+        console.error('[Storage] Failed to initialize storage:', error);
+        console.error('[Storage] Error details:', error);
+        // Fallback to default data
+        const defaultState = getDefaultState();
+        setHabits(defaultState.habits);
+        setTasks(defaultState.tasks);
       } finally {
         setIsLoading(false);
       }
@@ -79,37 +102,20 @@ function App() {
     if (!habit) return;
 
     const now = new Date().toISOString();
-    const wasAvailable = !habit.lastCompleted ||
-      (Date.now() - new Date(habit.lastCompleted).getTime()) >= (habit.repeatIntervalHours * 60 * 60 * 1000);
 
-    if (wasAvailable) {
-      // Checking habit: mark as completed
-      setHabits((prev) =>
-        prev.map((h) =>
-          h.id === id
-            ? {
-                ...h,
-                lastCompleted: now,
-                streak: h.streak + 1,
-              }
-            : h
-        )
-      );
-      triggerReinforcement(habit.text, habit.streak);
-    } else {
-      // Unchecking habit: make it available again
-      setHabits((prev) =>
-        prev.map((h) =>
-          h.id === id
-            ? {
-                ...h,
-                lastCompleted: null,
-                streak: Math.max(0, h.streak - 1),
-              }
-            : h
-        )
-      );
-    }
+    // With "+" model, always increment totalCompletions and update lastCompleted
+    setHabits((prev) =>
+      prev.map((h) =>
+        h.id === id
+          ? {
+              ...h,
+              lastCompleted: now,
+              totalCompletions: h.totalCompletions + 1,
+            }
+          : h
+      )
+    );
+    triggerReinforcement(habit.text, habit.totalCompletions);
   };
 
   const deleteHabit = (id: string) => {
@@ -137,7 +143,7 @@ function App() {
         {
           id: generateId(),
           text: text.trim(),
-          streak: 0,
+          totalCompletions: 0,
           lastCompleted: null,
           repeatIntervalHours: intervalHours,
           reflections: [],
@@ -163,7 +169,7 @@ function App() {
   };
 
   const addTaskReflection = (id: string, reflection: string) => {
-    setTasks((prev) => findAndUpdate(prev, id, (t) => ({ ...t, reflection })));
+    setTasks((prev) => findAndUpdate(prev, id, (t) => ({ ...t, reflections: [...(t.reflections || []), reflection] })));
   };
 
   const addTask = (text: string) => {
@@ -175,7 +181,7 @@ function App() {
           text: text.trim(),
           completed: false,
           completedAt: null,
-          reflection: null,
+          reflections: [],
           children: [],
         },
       ]);
@@ -193,12 +199,28 @@ function App() {
             text,
             completed: false,
             completedAt: null,
-            reflection: null,
+            reflections: [],
             children: [],
           },
         ],
       }))
     );
+  };
+
+  const deleteTask = (id: string) => {
+    const removeTask = (tasks: Task[], targetId: string): Task[] => {
+      return tasks
+        .filter((t) => t.id !== targetId)
+        .map((t) => ({
+          ...t,
+          children: removeTask(t.children || [], targetId),
+        }));
+    };
+    setTasks((prev) => removeTask(prev, id));
+  };
+
+  const updateTaskText = (id: string, text: string) => {
+    setTasks((prev) => findAndUpdate(prev, id, (t) => ({ ...t, text })));
   };
 
   // Handle LLM actions
@@ -207,6 +229,16 @@ function App() {
     setUndoState({ habits, tasks });
 
     switch (action.type) {
+      // Task actions
+      case 'add_task':
+        if (action.text) {
+          addTask(action.text);
+          setUndoMessage(`Added task: "${action.text}"`);
+          setShowUndo(true);
+          setTimeout(() => setShowUndo(false), 10000);
+        }
+        break;
+
       case 'add_subtask':
         if (action.parentId && action.text) {
           addSubtask(action.parentId, action.text);
@@ -216,10 +248,52 @@ function App() {
         }
         break;
 
-      case 'add_task':
+      case 'delete_task':
+        if (action.taskId) {
+          deleteTask(action.taskId);
+          setUndoMessage(`Deleted task: "${action.taskText || 'task'}"`);
+          setShowUndo(true);
+          setTimeout(() => setShowUndo(false), 10000);
+        }
+        break;
+
+      case 'edit_task':
+        if (action.taskId && action.text) {
+          updateTaskText(action.taskId, action.text);
+          setUndoMessage(`Updated task text`);
+          setShowUndo(true);
+          setTimeout(() => setShowUndo(false), 10000);
+        }
+        break;
+
+      // Habit actions
+      case 'add_habit':
         if (action.text) {
-          addTask(action.text);
-          setUndoMessage(`Added task: "${action.text}"`);
+          addHabit(action.text, action.repeatIntervalHours || 24);
+          setUndoMessage(`Added habit: "${action.text}"`);
+          setShowUndo(true);
+          setTimeout(() => setShowUndo(false), 10000);
+        }
+        break;
+
+      case 'delete_habit':
+        if (action.habitId) {
+          deleteHabit(action.habitId);
+          setUndoMessage(`Deleted habit: "${action.habitText || 'habit'}"`);
+          setShowUndo(true);
+          setTimeout(() => setShowUndo(false), 10000);
+        }
+        break;
+
+      case 'edit_habit':
+        if (action.habitId) {
+          if (action.text) {
+            updateHabitText(action.habitId, action.text);
+          }
+          if (action.repeatIntervalHours) {
+            updateHabitInterval(action.habitId, action.repeatIntervalHours);
+          }
+          setUndoMessage(`Updated habit`);
           setShowUndo(true);
           setTimeout(() => setShowUndo(false), 10000);
         }
@@ -256,10 +330,10 @@ function App() {
       <div className={`transition-all duration-300 ${chatOpen ? 'mr-0 sm:mr-96' : ''}`}>
         <div className="max-w-2xl mx-auto px-4 py-6">
           {/* Header */}
-          <div className="bg-white rounded-2xl shadow-sm p-4 mb-5">
-            <div className="flex items-center justify-between mb-3">
+          <div className="bg-white rounded-2xl shadow-sm p-4 mb-3">
+            <div className="flex items-center gap-4">
               <h1 className="text-lg font-semibold text-stone-800">WELLTIME</h1>
-              <div className="flex-1 max-w-md mx-4">
+              <div className="flex-1 max-w-md">
                 <div className="relative">
                   <svg
                     className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400"
@@ -293,28 +367,18 @@ function App() {
                   )}
                 </div>
               </div>
-            </div>
-
-            <div className="border-t border-stone-100 pt-3 mt-3 flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="text-right">
-                  <span className="text-2xl font-semibold text-stone-800">
-                    {habits.filter(h =>
-                      h.lastCompleted &&
-                      (Date.now() - new Date(h.lastCompleted).getTime()) < (h.repeatIntervalHours * 60 * 60 * 1000)
-                    ).length}
-                  </span>
-                  <span className="text-sm text-stone-400"> of {habits.length}</span>
-                </div>
-              </div>
-              <p className="text-sm text-stone-600 flex-1 mx-4">{coachMessage}</p>
               <button
                 onClick={() => setChatOpen(true)}
-                className="px-3 py-1.5 bg-kyoto-light text-kyoto-red text-xs font-semibold rounded-lg hover:bg-kyoto-medium transition-colors"
+                className="px-3 py-1.5 bg-kyoto-light text-kyoto-red text-xs font-semibold rounded-lg hover:bg-kyoto-medium transition-colors whitespace-nowrap"
               >
                 Plan
               </button>
             </div>
+          </div>
+
+          {/* Coach Message */}
+          <div className="px-1 mb-5">
+            <p className="text-sm text-stone-600">{coachMessage}</p>
           </div>
 
         {/* Habits Section */}
@@ -322,12 +386,15 @@ function App() {
           habits={habits}
           currentHour={currentHour}
           searchQuery={searchQuery}
+          showCompleted={showCompleted}
           onToggle={toggleHabit}
           onDelete={deleteHabit}
           onUpdateInterval={updateHabitInterval}
           onUpdateText={updateHabitText}
           onAddReflection={addHabitReflection}
           onAddHabit={addHabit}
+          revealedItem={revealedItem}
+          onSetRevealed={setRevealedItem}
         />
 
         {/* Spacer */}
@@ -337,10 +404,16 @@ function App() {
         <TasksSection
           tasks={tasks}
           searchQuery={searchQuery}
+          showCompleted={showCompleted}
           onToggle={toggleTask}
           onAddReflection={addTaskReflection}
           onAddSubtask={addSubtask}
           onAddTask={addTask}
+          onDelete={deleteTask}
+          onUpdateText={updateTaskText}
+          revealedItem={revealedItem}
+          onSetRevealed={setRevealedItem}
+          onToggleShowCompleted={() => setShowCompleted(!showCompleted)}
         />
         </div>
       </div>

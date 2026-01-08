@@ -6,14 +6,20 @@ import { AddTaskRow } from './AddTaskRow';
 interface TasksSectionProps {
   tasks: Task[];
   searchQuery: string;
+  showCompleted: boolean;
   onToggle: (id: string) => void;
   onAddReflection: (id: string, reflection: string) => void;
   onAddSubtask: (parentId: string, text: string) => void;
   onAddTask: (text: string) => void;
+  onDelete: (id: string) => void;
+  onUpdateText: (id: string, text: string) => void;
+  revealedItem: { type: 'habit' | 'task'; id: string; mode: 'reflection' | 'edit' | 'view-reflections' | 'add-subtask' } | null;
+  onSetRevealed: (item: { type: 'habit' | 'task'; id: string; mode: 'reflection' | 'edit' | 'view-reflections' | 'add-subtask' } | null) => void;
+  onToggleShowCompleted: () => void;
 }
 
-export function TasksSection({ tasks, searchQuery, onToggle, onAddReflection, onAddSubtask, onAddTask }: TasksSectionProps) {
-  const [showCompleted, setShowCompleted] = useState(false);
+export function TasksSection({ tasks, searchQuery, showCompleted, onToggle, onAddReflection, onAddSubtask, onAddTask, onDelete, onUpdateText, revealedItem, onSetRevealed, onToggleShowCompleted }: TasksSectionProps) {
+  const [isAdding, setIsAdding] = useState(false);
 
   // Filter tasks by search query
   const filterTasksBySearch = (task: Task, query: string): boolean => {
@@ -23,8 +29,8 @@ export function TasksSection({ tasks, searchQuery, onToggle, onAddReflection, on
     // Check if task text matches
     if (task.text.toLowerCase().includes(lowerQuery)) return true;
 
-    // Check if reflection matches
-    if (task.reflection && task.reflection.toLowerCase().includes(lowerQuery)) return true;
+    // Check if any reflections match
+    if (task.reflections && task.reflections.some((r) => r.toLowerCase().includes(lowerQuery))) return true;
 
     // Check if any children match
     if (task.children && task.children.some((child) => filterTasksBySearch(child, query))) {
@@ -46,28 +52,48 @@ export function TasksSection({ tasks, searchQuery, onToggle, onAddReflection, on
     return passesCompletionFilter && passesSearchFilter;
   });
 
+  const handleAddTask = (text: string) => {
+    onAddTask(text);
+    setIsAdding(false);
+  };
+
   return (
     <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
       <div className="px-4 py-3 border-b border-stone-100 flex items-center justify-between">
         <span className="text-xs font-semibold text-stone-500 uppercase tracking-wider">Tasks</span>
-        <button
-          onClick={() => setShowCompleted(!showCompleted)}
-          className="flex items-center gap-1.5 text-xs text-stone-500 hover:text-stone-700 transition-colors"
-        >
-          <div
-            className={`w-3.5 h-3.5 rounded border-2 flex items-center justify-center transition-colors ${
-              showCompleted ? 'bg-kyoto-red border-kyoto-red' : 'border-stone-300'
-            }`}
+        <div className="flex items-center gap-3">
+          <button
+            onClick={onToggleShowCompleted}
+            className="flex items-center gap-1.5 text-xs text-stone-500 hover:text-stone-700 transition-colors"
           >
-            {showCompleted && (
-              <svg className="w-2 h-2 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-              </svg>
-            )}
-          </div>
-          Show completed
-        </button>
+            <div
+              className={`w-3.5 h-3.5 rounded border-2 flex items-center justify-center transition-colors ${
+                showCompleted ? 'bg-kyoto-red border-kyoto-red' : 'border-stone-300'
+              }`}
+            >
+              {showCompleted && (
+                <svg className="w-2 h-2 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                </svg>
+              )}
+            </div>
+            Show completed
+          </button>
+          <button
+            onClick={() => setIsAdding(true)}
+            className="text-sm text-stone-400 hover:text-stone-600 transition-colors"
+          >
+            + Add task
+          </button>
+        </div>
       </div>
+
+      {isAdding && (
+        <AddTaskRow
+          onAdd={handleAddTask}
+          onCancel={() => setIsAdding(false)}
+        />
+      )}
 
       <div className="px-5 py-2">
         {visibleTasks.length > 0 ? (
@@ -80,6 +106,10 @@ export function TasksSection({ tasks, searchQuery, onToggle, onAddReflection, on
               onToggle={onToggle}
               onAddReflection={onAddReflection}
               onAddSubtask={onAddSubtask}
+              onDelete={onDelete}
+              onUpdateText={onUpdateText}
+              revealedItem={revealedItem}
+              onSetRevealed={onSetRevealed}
             />
           ))
         ) : searchQuery ? (
@@ -92,8 +122,6 @@ export function TasksSection({ tasks, searchQuery, onToggle, onAddReflection, on
           <div className="py-8 text-center text-stone-400 text-sm">All tasks complete</div>
         )}
       </div>
-
-      <AddTaskRow onAdd={onAddTask} />
     </div>
   );
 }

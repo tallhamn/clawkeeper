@@ -10,7 +10,7 @@ export function serializeToMarkdown(habits: Habit[], tasks: Task[]): string {
   habits.forEach((habit) => {
     md += `## ${habit.text}\n`;
     md += `- Interval: ${habit.repeatIntervalHours}h\n`;
-    md += `- Streak: ${habit.streak}\n`;
+    md += `- Total Completions: ${habit.totalCompletions}\n`;
     md += `- Last completed: ${habit.lastCompleted || 'never'}\n`;
     if (habit.reflections && habit.reflections.length > 0) {
       md += `- Reflections:\n`;
@@ -28,8 +28,10 @@ export function serializeToMarkdown(habits: Habit[], tasks: Task[]): string {
     const checkbox = task.completed ? '[x]' : '[ ]';
     const completedDate = task.completedAt ? ` (${task.completedAt})` : '';
     md += `${indent}- ${checkbox} ${task.text}${completedDate}\n`;
-    if (task.reflection) {
-      md += `${indent}  > ${task.reflection}\n`;
+    if (task.reflections && task.reflections.length > 0) {
+      task.reflections.forEach((r) => {
+        md += `${indent}  > ${r}\n`;
+      });
     }
     if (task.children) {
       task.children.forEach((child) => serializeTask(child, depth + 1));
@@ -41,8 +43,10 @@ export function serializeToMarkdown(habits: Habit[], tasks: Task[]): string {
     if (task.completed) {
       md += `- Status: completed${task.completedAt ? ` (${task.completedAt})` : ''}\n`;
     }
-    if (task.reflection) {
-      md += `> ${task.reflection}\n`;
+    if (task.reflections && task.reflections.length > 0) {
+      task.reflections.forEach((r) => {
+        md += `> ${r}\n`;
+      });
     }
     if (task.children && task.children.length > 0) {
       task.children.forEach((child) => serializeTask(child, 0));
@@ -74,6 +78,11 @@ export function parseMarkdown(md: string): AppState {
       continue;
     }
     if (line === '# Tasks') {
+      // Push any pending habit before switching sections
+      if (currentHabit) {
+        habits.push(currentHabit);
+        currentHabit = null;
+      }
       currentSection = 'tasks';
       continue;
     }
@@ -86,15 +95,18 @@ export function parseMarkdown(md: string): AppState {
           id: generateId(),
           text: line.slice(3),
           repeatIntervalHours: 24,
-          streak: 0,
+          totalCompletions: 0,
           lastCompleted: null,
           reflections: [],
         };
       } else if (currentHabit) {
         if (line.startsWith('- Interval: ')) {
           currentHabit.repeatIntervalHours = parseInt(line.slice(12)) || 24;
+        } else if (line.startsWith('- Total Completions: ')) {
+          currentHabit.totalCompletions = parseInt(line.slice(21)) || 0;
         } else if (line.startsWith('- Streak: ')) {
-          currentHabit.streak = parseInt(line.slice(10)) || 0;
+          // Legacy support for old format
+          currentHabit.totalCompletions = parseInt(line.slice(10)) || 0;
         } else if (line.startsWith('- Last completed: ')) {
           const value = line.slice(18);
           currentHabit.lastCompleted = value === 'never' ? null : value;
@@ -112,7 +124,7 @@ export function parseMarkdown(md: string): AppState {
           text: line.slice(3),
           completed: false,
           completedAt: null,
-          reflection: null,
+          reflections: [],
           children: [],
         };
         taskStack = [currentTask];
@@ -122,7 +134,7 @@ export function parseMarkdown(md: string): AppState {
           const dateMatch = line.match(/\((\d{4}-\d{2}-\d{2})\)/);
           if (dateMatch) currentTask.completedAt = dateMatch[1];
         } else if (line.startsWith('> ') && taskStack.length === 1) {
-          currentTask.reflection = line.slice(2);
+          currentTask.reflections.push(line.slice(2));
         } else if (line.match(/^(\s*)- \[(x| )\] /)) {
           const match = line.match(/^(\s*)- \[(x| )\] (.+?)(?:\s+\((\d{4}-\d{2}-\d{2})\))?$/);
           if (match) {
@@ -136,7 +148,7 @@ export function parseMarkdown(md: string): AppState {
               text,
               completed,
               completedAt,
-              reflection: null,
+              reflections: [],
               children: [],
             };
 
@@ -152,8 +164,8 @@ export function parseMarkdown(md: string): AppState {
         } else if (line.match(/^\s*> /)) {
           // Reflection for a subtask
           const reflection = line.trim().slice(2);
-          if (taskStack.length > 1) {
-            taskStack[taskStack.length - 1].reflection = reflection;
+          if (taskStack.length > 0) {
+            taskStack[taskStack.length - 1].reflections.push(reflection);
           }
         }
       }
