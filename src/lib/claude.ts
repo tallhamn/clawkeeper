@@ -118,12 +118,18 @@ When the user asks you to make changes, propose them using JSON format in code b
 \`\`\`
 
 \`\`\`json-action
-{"type": "edit_task", "taskText": "old name", "newText": "new name", "label": "Rename task"}
+{"type": "edit_task", "taskText": "old name", "text": "new name", "label": "Rename task"}
 \`\`\`
 
 \`\`\`json-action
-{"type": "add_subtask", "parentText": "parent", "text": "subtask", "label": "Add subtask"}
+{"type": "add_subtask", "parentText": "parent", "text": "subtask", "label": "Add subtask: parent"}
 \`\`\`
+
+\`\`\`json-action
+{"type": "move_task", "taskText": "task to move", "newParentText": "new parent", "label": "Move task under 'new parent'"}
+\`\`\`
+
+Note: For move_task, use newParentText: null to move a task to the root level (make it a top-level task).
 
 **Habit Operations:**
 \`\`\`json-action

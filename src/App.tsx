@@ -6,7 +6,9 @@ import { HabitsSection } from '@/components/HabitsSection';
 import { TasksSection } from '@/components/TasksSection';
 import { ChatPanel } from '@/components/ChatPanel';
 import { UndoBar } from '@/components/UndoBar';
+import { SplashScreen } from '@/components/SplashScreen';
 import { initializeStorage, isInitialized, loadCurrentState, saveCurrentState, archiveOldCompletedTasks, getDefaultState } from '@/lib/storage';
+import { APP_VERSION } from '@/lib/constants';
 
 function App() {
   const [habits, setHabits] = useState<Habit[]>([]);
@@ -16,6 +18,7 @@ function App() {
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [showCompleted, setShowCompleted] = useState(false);
+  const [showSplash, setShowSplash] = useState(false);
 
   // Track which element is currently revealed (reflection input, edit controls, etc.)
   const [revealedItem, setRevealedItem] = useState<{ type: 'habit' | 'task'; id: string; mode: 'reflection' | 'edit' | 'view-reflections' | 'add-subtask' } | null>(null);
@@ -26,6 +29,28 @@ function App() {
   const [undoMessage, setUndoMessage] = useState('');
 
   const { message: coachMessage, triggerReinforcement } = useCoachMessage(habits, currentHour);
+
+  // Check if splash screen should be shown for this version
+  useEffect(() => {
+    try {
+      const lastSeenVersion = localStorage.getItem('welltime_last_seen_version');
+      if (lastSeenVersion !== APP_VERSION) {
+        setShowSplash(true);
+      }
+    } catch (error) {
+      // localStorage not available (e.g., in tests)
+      console.log('[Splash] localStorage not available');
+    }
+  }, []);
+
+  const handleDismissSplash = () => {
+    try {
+      localStorage.setItem('welltime_last_seen_version', APP_VERSION);
+    } catch (error) {
+      console.log('[Splash] localStorage not available');
+    }
+    setShowSplash(false);
+  };
 
   // Initialize storage and load data on mount
   useEffect(() => {
@@ -97,25 +122,56 @@ function App() {
   }, []);
 
   // Habit handlers
-  const toggleHabit = (id: string) => {
+  const toggleHabit = (id: string, action: 'complete' | 'undo' | 'wakeup' = 'complete') => {
     const habit = habits.find((h) => h.id === id);
     if (!habit) return;
 
-    const now = new Date().toISOString();
-
-    // With "+" model, always increment totalCompletions and update lastCompleted
-    setHabits((prev) =>
-      prev.map((h) =>
-        h.id === id
-          ? {
-              ...h,
-              lastCompleted: now,
-              totalCompletions: h.totalCompletions + 1,
-            }
-          : h
-      )
-    );
-    triggerReinforcement(habit.text, habit.totalCompletions);
+    if (action === 'complete') {
+      // Complete: increment and update lastCompleted
+      const now = new Date().toISOString();
+      setHabits((prev) =>
+        prev.map((h) =>
+          h.id === id
+            ? {
+                ...h,
+                lastCompleted: now,
+                totalCompletions: h.totalCompletions + 1,
+              }
+            : h
+        )
+      );
+      triggerReinforcement(habit.text, habit.totalCompletions);
+    } else if (action === 'undo') {
+      // Undo: decrement and reset lastCompleted
+      setHabits((prev) =>
+        prev.map((h) =>
+          h.id === id
+            ? {
+                ...h,
+                lastCompleted: null,
+                totalCompletions: Math.max(0, h.totalCompletions - 1),
+              }
+            : h
+        )
+      );
+      console.log(`[Habit] Unchecked "${habit.text}"`);
+    } else if (action === 'wakeup') {
+      // Wake up from standby: make habit available again without changing completion count
+      // Set lastCompleted to exactly repeatIntervalHours ago, making it due now
+      const wakeupTime = new Date();
+      wakeupTime.setHours(wakeupTime.getHours() - habit.repeatIntervalHours);
+      setHabits((prev) =>
+        prev.map((h) =>
+          h.id === id
+            ? {
+                ...h,
+                lastCompleted: wakeupTime.toISOString(),
+              }
+            : h
+        )
+      );
+      console.log(`[Habit] Woke up "${habit.text}" - now available again`);
+    }
   };
 
   const deleteHabit = (id: string) => {
@@ -159,13 +215,19 @@ function App() {
     );
 
   const toggleTask = (id: string) => {
-    setTasks((prev) =>
-      findAndUpdate(prev, id, (t) => ({
-        ...t,
-        completed: !t.completed,
-        completedAt: !t.completed ? getTodayDate() : null,
-      }))
-    );
+    setTasks((prev) => {
+      const updated = findAndUpdate(prev, id, (t) => {
+        const newCompleted = !t.completed;
+        const newCompletedAt = newCompleted ? getTodayDate() : null;
+        console.log(`[Toggle] Task "${t.text}": completed ${t.completed} → ${newCompleted}, completedAt ${t.completedAt} → ${newCompletedAt}`);
+        return {
+          ...t,
+          completed: newCompleted,
+          completedAt: newCompletedAt,
+        };
+      });
+      return updated;
+    });
   };
 
   const addTaskReflection = (id: string, reflection: string) => {
@@ -223,6 +285,39 @@ function App() {
     setTasks((prev) => findAndUpdate(prev, id, (t) => ({ ...t, text })));
   };
 
+  const moveTask = (taskId: string, newParentId: string | null) => {
+    // Find and remove the task from its current location
+    let taskToMove: Task | null = null;
+
+    const removeTask = (tasks: Task[]): Task[] => {
+      return tasks.reduce((acc: Task[], task) => {
+        if (task.id === taskId) {
+          taskToMove = task;
+          return acc; // Remove this task
+        }
+        return [...acc, { ...task, children: removeTask(task.children || []) }];
+      }, []);
+    };
+
+    const tasksWithoutMoved = removeTask(tasks);
+
+    if (!taskToMove) return; // Task not found
+
+    // Add task to new location
+    if (newParentId === null) {
+      // Move to root level
+      setTasks([...tasksWithoutMoved, taskToMove]);
+    } else {
+      // Move to a specific parent
+      setTasks(
+        findAndUpdate(tasksWithoutMoved, newParentId, (parent) => ({
+          ...parent,
+          children: [...(parent.children || []), taskToMove!],
+        }))
+      );
+    }
+  };
+
   // Handle LLM actions
   const handleLLMAction = (action: LLMAction) => {
     // Save current state for undo
@@ -261,6 +356,16 @@ function App() {
         if (action.taskId && action.text) {
           updateTaskText(action.taskId, action.text);
           setUndoMessage(`Updated task text`);
+          setShowUndo(true);
+          setTimeout(() => setShowUndo(false), 10000);
+        }
+        break;
+
+      case 'move_task':
+        if (action.taskId) {
+          moveTask(action.taskId, action.newParentId ?? null);
+          const destination = action.newParentText ? `under "${action.newParentText}"` : 'to top level';
+          setUndoMessage(`Moved task ${destination}`);
           setShowUndo(true);
           setTimeout(() => setShowUndo(false), 10000);
         }
@@ -435,6 +540,9 @@ function App() {
         onUndo={handleUndo}
         onDismiss={() => setShowUndo(false)}
       />
+
+      {/* Splash Screen */}
+      {showSplash && <SplashScreen onDismiss={handleDismissSplash} />}
     </div>
   );
 }

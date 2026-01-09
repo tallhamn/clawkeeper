@@ -357,14 +357,30 @@ function parseActionsFromResponse(text: string, habits: Habit[], tasks: Task[]):
             label: actionData.label || `Add "${actionData.text}"`,
           });
         }
-      } else if (actionData.type === 'edit_task' && actionData.taskText && actionData.newText) {
+      } else if (actionData.type === 'edit_task' && actionData.taskText && actionData.text) {
         const taskId = findTaskIdByText(tasks, actionData.taskText);
         if (taskId) {
           actions.push({
             type: 'edit_task',
             taskId,
-            text: actionData.newText,
+            text: actionData.text,
             label: actionData.label || `Update task`,
+          });
+        }
+      } else if (actionData.type === 'move_task' && actionData.taskText) {
+        const taskId = findTaskIdByText(tasks, actionData.taskText);
+        if (taskId) {
+          let newParentId: string | undefined = undefined;
+          if (actionData.newParentText) {
+            newParentId = findTaskIdByText(tasks, actionData.newParentText) || undefined;
+          }
+          actions.push({
+            type: 'move_task',
+            taskId,
+            taskText: actionData.taskText,
+            newParentId,
+            newParentText: actionData.newParentText,
+            label: actionData.label || `Move "${actionData.taskText}"`,
           });
         }
       }

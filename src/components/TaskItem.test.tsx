@@ -3,6 +3,21 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import { TaskItem } from './TaskItem';
 import type { Task } from '@/lib/types';
 
+// Mock the constants module to enable auto-reflection for testing
+vi.mock('@/lib/constants', () => ({
+  ENABLE_AUTO_REFLECTION: true,
+  APP_VERSION: '1.0.0',
+  APP_DIR_NAME: '/.welltime',
+  CURRENT_MD_FILE: 'current.md',
+  HISTORY_DIR: 'history',
+  MAX_SNAPSHOTS: 20,
+  UNDO_BAR_TIMEOUT: 10000,
+  REINFORCEMENT_MESSAGE_DURATION: 4000,
+  TASK_DEPTH_COLORS: [],
+  RELATIVE_TIME_BADGE_STYLES: {},
+  HABIT_STATE_OPACITY: {},
+}));
+
 describe('TaskItem Component', () => {
   const mockTask: Task = {
     id: 't1',
@@ -191,5 +206,71 @@ describe('TaskItem Component', () => {
 
     expect(screen.getByText('First reflection')).toBeInTheDocument();
     expect(screen.getByText('Second reflection')).toBeInTheDocument();
+  });
+
+  it('should uncheck completed task with single click', () => {
+    const completedTask: Task = {
+      ...mockTask,
+      completed: true,
+      completedAt: '2026-01-08',
+    };
+
+    const onToggle = vi.fn();
+    const onSetRevealed = vi.fn();
+
+    const { container } = render(
+      <TaskItem
+        task={completedTask}
+        depth={0}
+        showCompleted={true}
+        onToggle={onToggle}
+        onAddReflection={vi.fn()}
+        onAddSubtask={vi.fn()}
+        revealedItem={null}
+        onSetRevealed={onSetRevealed}
+      />
+    );
+
+    // Click checkbox once
+    const checkbox = container.querySelector('button');
+    fireEvent.click(checkbox!);
+
+    // Should call onToggle immediately (single click to uncheck)
+    expect(onToggle).toHaveBeenCalledTimes(1);
+    expect(onToggle).toHaveBeenCalledWith('t1');
+
+    // Should close any open panels
+    expect(onSetRevealed).toHaveBeenCalledWith(null);
+  });
+
+  it('should cancel pending completion if checkbox clicked again', () => {
+    const onToggle = vi.fn();
+    const onSetRevealed = vi.fn();
+
+    const { container } = render(
+      <TaskItem
+        task={mockTask}
+        depth={0}
+        showCompleted={true}
+        onToggle={onToggle}
+        onAddReflection={vi.fn()}
+        onAddSubtask={vi.fn()}
+        revealedItem={null}
+        onSetRevealed={onSetRevealed}
+      />
+    );
+
+    // First click - should show reflection input (pending state)
+    const checkbox = container.querySelector('button');
+    fireEvent.click(checkbox!);
+
+    expect(onSetRevealed).toHaveBeenCalledWith({ type: 'task', id: 't1', mode: 'reflection' });
+
+    // Second click - should cancel pending completion
+    fireEvent.click(checkbox!);
+
+    expect(onSetRevealed).toHaveBeenCalledWith(null);
+    // Should NOT have called onToggle (task not actually completed)
+    expect(onToggle).not.toHaveBeenCalled();
   });
 });

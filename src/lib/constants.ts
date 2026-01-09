@@ -2,6 +2,12 @@
  * Application constants
  */
 
+// App version - increment this to show splash screen on new builds
+export const APP_VERSION = '1.0.0';
+
+// Feature flags
+export const ENABLE_AUTO_REFLECTION = false; // Set to false to disable automatic reflection prompts
+
 // Storage paths
 // Local directory: ~/.welltime (iCloud can be configured later with proper entitlements)
 export const APP_DIR_NAME = '/.welltime';

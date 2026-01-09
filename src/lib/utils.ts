@@ -122,8 +122,11 @@ export function formatInterval(hours: number): string {
 /**
  * Format time since last completion
  */
-export function formatTimeSince(lastCompleted: string | null): string {
-  if (!lastCompleted) return 'not done yet';
+export function formatTimeSince(lastCompleted: string | null, totalCompletions?: number): string {
+  // Handle corrupted state: if habit has completions but no timestamp, show that it was done before
+  if (!lastCompleted) {
+    return totalCompletions && totalCompletions > 0 ? 'done previously' : 'not done yet';
+  }
 
   const now = Date.now();
   const completedTime = new Date(lastCompleted).getTime();

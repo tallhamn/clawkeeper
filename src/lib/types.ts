@@ -57,6 +57,7 @@ export type LLMActionType =
   | 'complete_task'
   | 'delete_task'
   | 'edit_task'
+  | 'move_task'
   | 'add_habit'
   | 'delete_habit'
   | 'edit_habit'
@@ -71,6 +72,8 @@ export interface LLMAction {
   parentId?: string;
   taskText?: string;
   taskId?: string;
+  newParentText?: string;  // For move_task: new parent task name
+  newParentId?: string;    // For move_task: new parent task id (or null for root)
   habitText?: string;
   habitId?: string;
   repeatIntervalHours?: number;

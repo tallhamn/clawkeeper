@@ -1,11 +1,12 @@
 import { useState, useEffect, useRef } from 'react';
 import type { Habit } from '@/lib/types';
 import { formatInterval, formatTimeSince, isHabitAvailable, formatCountdown } from '@/lib/utils';
+import { ENABLE_AUTO_REFLECTION } from '@/lib/constants';
 
 interface HabitItemProps {
   habit: Habit;
   editMode?: boolean;
-  onToggle: (id: string) => void;
+  onToggle: (id: string, action?: 'complete' | 'undo' | 'wakeup') => void;
   onDelete: (id: string) => void;
   onUpdateInterval: (id: string, intervalHours: number) => void;
   onUpdateText: (id: string, text: string) => void;
@@ -93,6 +94,14 @@ export function HabitItem({
     }
   }, [showReflectionInput, showCompletionAnimation, showTransitionToPower]);
 
+  // If reflection input closes while habit is still in completion state, transition to power symbol
+  useEffect(() => {
+    if (!showReflectionInput && showCompletionAnimation && !showTransitionToPower) {
+      // Reflection was closed without save/skip - trigger transition
+      transitionToPowerSymbol();
+    }
+  }, [showReflectionInput, showCompletionAnimation, showTransitionToPower]);
+
   const getIntervalParts = (hours: number): { value: number; unit: IntervalUnit } => {
     if (hours % (24 * 7) === 0) {
       return { value: hours / (24 * 7), unit: 'weeks' };
@@ -136,6 +145,7 @@ export function HabitItem({
   };
 
   const handleComplete = () => {
+    // Normal completion flow (always increment when checkbox is clicked)
     // Clear forcedDue if it was set
     setForcedDue(false);
 
@@ -146,15 +156,23 @@ export function HabitItem({
     setShowCompletionAnimation(true);
 
     // Increment totalCompletions immediately
-    onToggle(habit.id);
+    onToggle(habit.id, 'complete');
 
-    // Show reflection input immediately while keeping checked state
-    onSetRevealed({ type: 'habit', id: habit.id, mode: 'reflection' });
+    // Show reflection input only if feature flag is enabled
+    if (ENABLE_AUTO_REFLECTION) {
+      onSetRevealed({ type: 'habit', id: habit.id, mode: 'reflection' });
+    } else {
+      // Skip to power symbol transition immediately
+      transitionToPowerSymbol();
+    }
   };
 
   const handleWakeUp = () => {
-    // Wake up: immediately transition power symbol back to checkbox without completing
-    setForcedDue(true); // Override the resting state immediately
+    // Wake up from standby: make habit available again without changing completion count
+    onToggle(habit.id, 'wakeup');
+
+    // Then show empty checkbox that can be completed normally
+    setForcedDue(true); // Override the resting state to show checkbox
   };
 
   const handleSaveReflection = () => {
@@ -287,14 +305,14 @@ export function HabitItem({
                   autoFocus
                 />
               ) : (
-                <span className={`text-stone-700 transition-all ${showCompletionAnimation ? 'line-through opacity-50' : ''}`}>
+                <span className={`text-stone-700 transition-all ${showCompletionAnimation || isResting ? 'line-through opacity-50' : ''}`}>
                   <span
                     onClick={editMode ? () => setIsEditingText(true) : handleTextClick}
                     className={editMode ? 'cursor-pointer hover:text-stone-600' : 'cursor-pointer hover:text-stone-600'}
                   >
                     {habit.text}
                   </span>
-                  {!editMode && <span className="text-stone-400 ml-1.5">• {formatTimeSince(habit.lastCompleted)}</span>}
+                  {!editMode && <span className="text-stone-400 ml-1.5">• {formatTimeSince(habit.lastCompleted, habit.totalCompletions)}</span>}
                   {editMode && (
                     <span
                       onClick={handleStartEditingInterval}

@@ -185,6 +185,17 @@ export async function saveCurrentState(state: AppState): Promise<void> {
       tasks: filterCurrentTasks(state.tasks),
     };
 
+    // Log if any tasks were filtered out
+    if (filteredState.tasks.length !== state.tasks.length) {
+      console.log(`[Storage] Filtered ${state.tasks.length} → ${filteredState.tasks.length} tasks`);
+      const filtered = state.tasks.filter(
+        t => !filteredState.tasks.some(ft => ft.id === t.id)
+      );
+      filtered.forEach(t => {
+        console.log(`[Storage] Filtered out: "${t.text}" (completed: ${t.completed}, completedAt: ${t.completedAt})`);
+      });
+    }
+
     // Save as Markdown
     const markdown = serializeToMarkdown(filteredState.habits, filteredState.tasks);
     await writeTextFile(`${appDir}/${CURRENT_MD_FILE}`, markdown);

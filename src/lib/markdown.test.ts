@@ -8,7 +8,7 @@ describe('Markdown Serialization', () => {
       {
         id: 'h1',
         text: 'write code',
-        streak: 5,
+        totalCompletions: 5,
         lastCompleted: '2025-01-07T10:00:00Z',
         repeatIntervalHours: 4,
         reflections: ['worked well today', 'stayed focused'],
@@ -20,7 +20,7 @@ describe('Markdown Serialization', () => {
 
     expect(parsed.habits).toHaveLength(1);
     expect(parsed.habits[0].text).toBe('write code');
-    expect(parsed.habits[0].streak).toBe(5);
+    expect(parsed.habits[0].totalCompletions).toBe(5);
     expect(parsed.habits[0].repeatIntervalHours).toBe(4);
     expect(parsed.habits[0].reflections).toHaveLength(2);
   });
@@ -63,7 +63,7 @@ describe('Markdown Serialization', () => {
       {
         id: 'h1',
         text: 'workout',
-        streak: 3,
+        totalCompletions: 3,
         lastCompleted: '2025-01-07T10:00:00Z',
         repeatIntervalHours: 24,
         reflections: [],

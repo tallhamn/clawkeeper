@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import type { Task } from '@/lib/types';
+import { ENABLE_AUTO_REFLECTION } from '@/lib/constants';
 
 interface TaskItemProps {
   task: Task;
@@ -51,14 +52,25 @@ export function TaskItem({
   const isVisuallyCompleted = task.completed || pendingCompletion;
 
   const handleToggle = () => {
-    if (!task.completed && !pendingCompletion) {
-      // Mark as pending completion and show reflection input
-      setPendingCompletion(true);
-      onSetRevealed({ type: 'task', id: task.id, mode: 'reflection' });
-    } else {
-      // Unchecking a completed task
+    if (task.completed) {
+      // Unchecking a completed task - simple toggle
       onToggle(task.id);
       setPendingCompletion(false);
+      onSetRevealed(null); // Close any open panels
+    } else if (pendingCompletion) {
+      // Cancel pending completion (user clicked checkbox again before saving reflection)
+      setPendingCompletion(false);
+      onSetRevealed(null);
+    } else {
+      // Completing a task
+      if (ENABLE_AUTO_REFLECTION) {
+        // Show reflection input first
+        setPendingCompletion(true);
+        onSetRevealed({ type: 'task', id: task.id, mode: 'reflection' });
+      } else {
+        // Complete immediately without reflection
+        onToggle(task.id);
+      }
     }
   };
 
@@ -104,7 +116,7 @@ export function TaskItem({
   };
 
   return (
-    <div className={`${depth > 0 ? 'ml-5 pl-3 border-l-2 border-l-stone-200' : ''}`}>
+    <div className={`${depth > 0 ? 'ml-2.5 pl-5 border-l-2 border-l-stone-200' : ''}`}>
       <div className={`group py-2 ${task.completed && !showReflectionInput ? 'opacity-40' : ''}`}>
         <div className="flex items-start gap-2.5">
           <button
