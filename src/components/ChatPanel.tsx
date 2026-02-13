@@ -40,7 +40,7 @@ export function ChatPanel({ isOpen, onClose, habits, tasks, currentHour, onActio
     {
       id: '1',
       role: 'assistant',
-      text: `I can see your ${habits.length} habits and ${tasks.length} projects, and ${countNotes()} notes. How can I help?`,
+      text: `I can see your ${habits.length} habits and ${tasks.length} tasks. How can I help?`,
     },
   ]);
   const [input, setInput] = useState('');
@@ -57,7 +57,7 @@ export function ChatPanel({ isOpen, onClose, habits, tasks, currentHour, onActio
         return [
           {
             ...prev[0],
-            text: `I can see your ${habits.length} habits and ${tasks.length} projects, and ${countNotes()} notes. How can I help?`,
+            text: `I can see your ${habits.length} habits and ${tasks.length} tasks. How can I help?`,
           },
           ...prev.slice(1),
         ];
