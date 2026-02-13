@@ -60,17 +60,17 @@ export function TasksSection({ tasks, searchQuery, showCompleted, onToggle, onAd
   };
 
   return (
-    <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
-      <div className="px-4 py-3 border-b border-stone-100 flex items-center justify-between">
-        <span className="text-xs font-semibold text-stone-500 uppercase tracking-wider">Tasks</span>
+    <div className="bg-tokyo-surface rounded-2xl overflow-hidden">
+      <div className="px-4 py-3 border-b border-tokyo-border flex items-center justify-between">
+        <span className="text-xs font-semibold text-tokyo-blue uppercase tracking-wider">Tasks</span>
         <div className="flex items-center gap-3">
           <button
             onClick={onToggleShowCompleted}
-            className="flex items-center gap-1.5 text-xs text-stone-500 hover:text-stone-700 transition-colors"
+            className="flex items-center gap-1.5 text-xs text-tokyo-text-muted hover:text-tokyo-text transition-colors"
           >
             <div
               className={`w-3.5 h-3.5 rounded border-2 flex items-center justify-center transition-colors ${
-                showCompleted ? 'bg-kyoto-red border-kyoto-red' : 'border-stone-300'
+                showCompleted ? 'bg-tokyo-blue border-tokyo-blue' : 'border-tokyo-border'
               }`}
             >
               {showCompleted && (
@@ -83,7 +83,7 @@ export function TasksSection({ tasks, searchQuery, showCompleted, onToggle, onAd
           </button>
           <button
             onClick={() => setIsAdding(true)}
-            className="text-sm text-stone-400 hover:text-stone-600 transition-colors"
+            className="text-sm text-tokyo-green hover:text-tokyo-text transition-colors"
           >
             + Add task
           </button>
@@ -117,13 +117,13 @@ export function TasksSection({ tasks, searchQuery, showCompleted, onToggle, onAd
             />
           ))
         ) : searchQuery ? (
-          <div className="py-8 text-center text-stone-400 text-sm">
+          <div className="py-8 text-center text-tokyo-text-dim text-sm">
             No tasks matching "{searchQuery}"
           </div>
         ) : showCompleted ? (
-          <div className="py-8 text-center text-stone-400 text-sm">No tasks yet</div>
+          <div className="py-8 text-center text-tokyo-text-dim text-sm">No tasks yet</div>
         ) : (
-          <div className="py-8 text-center text-stone-400 text-sm">All tasks complete</div>
+          <div className="py-8 text-center text-tokyo-text-dim text-sm">All tasks complete</div>
         )}
       </div>
     </div>

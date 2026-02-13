@@ -21,7 +21,7 @@ export function AddTaskRow({ onAdd, onCancel }: AddTaskRowProps) {
   };
 
   return (
-    <div className="px-5 py-3 border-t border-stone-100 bg-stone-50/50">
+    <div className="px-5 py-3 border-t border-tokyo-border bg-tokyo-surface-alt/50">
       <div className="flex gap-2">
         <input
           type="text"
@@ -32,15 +32,15 @@ export function AddTaskRow({ onAdd, onCancel }: AddTaskRowProps) {
             if (e.key === 'Escape') handleCancel();
           }}
           placeholder="New task..."
-          className="flex-1 px-3 py-2 text-sm bg-white border border-stone-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-kyoto-red"
+          className="flex-1 px-3 py-2 text-sm bg-tokyo-surface-alt border border-tokyo-border rounded-lg focus:outline-none focus:ring-1 focus:ring-tokyo-blue"
           autoFocus
         />
-        <button onClick={handleAdd} className="px-4 py-2 text-sm bg-kyoto-red text-white rounded-lg hover:opacity-90 transition-opacity">
+        <button onClick={handleAdd} className="px-4 py-2 text-sm bg-tokyo-blue text-white rounded-lg hover:bg-tokyo-blue-hover transition-colors">
           Add
         </button>
         <button
           onClick={handleCancel}
-          className="px-3 py-2 text-sm text-stone-400 hover:text-stone-600"
+          className="px-3 py-2 text-sm text-tokyo-text-muted hover:text-tokyo-text"
         >
           Cancel
         </button>

@@ -236,14 +236,14 @@ export function HabitItem({
             {isDue && !showCompletionAnimation && !showTransitionToPower && (
               <button
                 onClick={handleComplete}
-                className="w-5 h-5 rounded border-2 border-stone-300 hover:border-stone-400 flex items-center justify-center transition-all flex-shrink-0"
+                className="w-5 h-5 rounded border-2 border-tokyo-blue/40 hover:border-tokyo-blue flex items-center justify-center transition-all flex-shrink-0"
               >
               </button>
             )}
 
             {/* Completion animation: Checkbox with checkmark (identical to task) */}
             {showCompletionAnimation && (
-              <div className="w-5 h-5 rounded border-2 border-kyoto-red bg-kyoto-red flex items-center justify-center transition-all flex-shrink-0">
+              <div className="w-5 h-5 rounded border-2 border-tokyo-green bg-tokyo-green flex items-center justify-center transition-all flex-shrink-0">
                 <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                 </svg>
@@ -253,7 +253,7 @@ export function HabitItem({
             {/* Transition animation: Morph to power symbol */}
             {showTransitionToPower && (
               <div className="w-5 h-5 flex items-center justify-center transition-all duration-1000 flex-shrink-0 animate-pulse">
-                <span className="text-lg text-kyoto-red">⏻</span>
+                <span className="text-lg text-tokyo-magenta">⏻</span>
               </div>
             )}
 
@@ -273,7 +273,7 @@ export function HabitItem({
                   <span className="text-lg">⏻</span>
                 </button>
                 {showCountdown && (
-                  <div className="absolute left-7 top-0 bg-stone-800 text-white text-xs px-2 py-1 rounded whitespace-nowrap z-10">
+                  <div className="absolute left-7 top-0 bg-tokyo-surface text-tokyo-text text-xs px-2 py-1 rounded whitespace-nowrap z-10">
                     {countdown}
                   </div>
                 )}
@@ -298,22 +298,22 @@ export function HabitItem({
                       setIsEditingText(false);
                     }
                   }}
-                  className="w-full px-3 py-2 bg-stone-50 border border-stone-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-kyoto-red text-sm"
+                  className="w-full px-3 py-2 bg-tokyo-surface-alt border border-tokyo-border rounded-lg focus:outline-none focus:ring-1 focus:ring-tokyo-blue text-sm"
                   autoFocus
                 />
               ) : (
-                <span className={`text-stone-700 transition-all ${showCompletionAnimation || isResting ? 'line-through opacity-50' : ''}`}>
+                <span className={`text-tokyo-text-bright transition-all ${showCompletionAnimation || isResting ? 'line-through opacity-50' : ''}`}>
                   <span
                     onClick={editMode ? () => setIsEditingText(true) : handleTextClick}
-                    className={editMode ? 'cursor-pointer hover:text-stone-600' : 'cursor-pointer hover:text-stone-600'}
+                    className={editMode ? 'cursor-pointer hover:text-tokyo-text-bright' : 'cursor-pointer hover:text-tokyo-text-bright'}
                   >
                     {habit.text}
                   </span>
-                  {!editMode && <span className="text-stone-400 ml-1.5">• {formatTimeSince(habit.lastCompleted, habit.totalCompletions)}</span>}
+                  {!editMode && <span className="text-tokyo-yellow ml-1.5">• {formatTimeSince(habit.lastCompleted, habit.totalCompletions)}</span>}
                   {editMode && (
                     <span
                       onClick={handleStartEditingInterval}
-                      className="text-stone-400 ml-1.5 cursor-pointer hover:text-stone-600"
+                      className="text-tokyo-text-muted ml-1.5 cursor-pointer hover:text-tokyo-text-bright"
                     >
                       • every {formatInterval(habit.repeatIntervalHours)}
                     </span>
@@ -326,7 +326,7 @@ export function HabitItem({
             {!editMode && (
               <button
                 onClick={() => onSetRevealed({ type: 'habit', id: habit.id, mode: 'edit' })}
-                className="p-1 text-stone-300 hover:text-stone-500 rounded opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity flex-shrink-0"
+                className="p-1 text-tokyo-text-dim hover:text-tokyo-text-muted rounded opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity flex-shrink-0"
                 title="Edit habit"
               >
                 <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
@@ -340,7 +340,7 @@ export function HabitItem({
             {editMode && (
               <button
                 onClick={() => onDelete(habit.id)}
-                className="p-1 text-stone-300 hover:text-rose-500 rounded opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-all flex-shrink-0"
+                className="p-1 text-tokyo-text-dim hover:text-tokyo-red rounded opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-all flex-shrink-0"
                 title="Delete habit"
               >
                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -352,13 +352,13 @@ export function HabitItem({
           {/* Inline interval editor in Edit mode */}
           {editMode && isEditingInterval && (
             <div className="flex items-center gap-1 flex-wrap mt-2">
-              <span className="text-xs text-stone-400">every</span>
+              <span className="text-xs text-tokyo-text-muted">every</span>
               <input
                 type="number"
                 min="1"
                 value={intervalValue}
                 onChange={(e) => setIntervalValue(Math.max(1, parseInt(e.target.value) || 1))}
-                className="w-12 px-1 py-0.5 text-xs bg-white border border-stone-200 rounded focus:outline-none focus:ring-1 focus:ring-kyoto-red"
+                className="w-12 px-1 py-0.5 text-xs bg-tokyo-surface-alt border border-tokyo-border rounded focus:outline-none focus:ring-1 focus:ring-tokyo-blue"
                 autoFocus
               />
               <div className="flex gap-0.5">
@@ -368,8 +368,8 @@ export function HabitItem({
                     onClick={() => setIntervalUnit(unit)}
                     className={`px-1.5 py-0.5 text-xs rounded transition-colors ${
                       intervalUnit === unit
-                        ? 'bg-kyoto-red text-white'
-                        : 'bg-stone-100 text-stone-600 hover:bg-stone-200'
+                        ? 'bg-tokyo-blue text-white'
+                        : 'bg-tokyo-surface-alt text-tokyo-text-muted hover:bg-tokyo-border/30'
                     }`}
                   >
                     {unit}
@@ -378,13 +378,13 @@ export function HabitItem({
               </div>
               <button
                 onClick={handleSaveInterval}
-                className="px-2 py-0.5 text-xs bg-kyoto-red text-white rounded hover:opacity-90"
+                className="px-2 py-0.5 text-xs bg-tokyo-blue text-white rounded hover:bg-tokyo-blue-hover"
               >
                 Save
               </button>
               <button
                 onClick={handleCancelInterval}
-                className="px-2 py-0.5 text-xs text-stone-500 hover:text-stone-700"
+                className="px-2 py-0.5 text-xs text-tokyo-text-muted hover:text-tokyo-text"
               >
                 Cancel
               </button>
@@ -395,13 +395,13 @@ export function HabitItem({
             <div className="flex items-center gap-2 mt-1 flex-wrap">
               {isEditingInterval ? (
                 <div className="flex items-center gap-1 flex-wrap">
-                  <span className="text-xs text-stone-400">every</span>
+                  <span className="text-xs text-tokyo-text-muted">every</span>
                   <input
                     type="number"
                     min="1"
                     value={intervalValue}
                     onChange={(e) => setIntervalValue(Math.max(1, parseInt(e.target.value) || 1))}
-                    className="w-12 px-1 py-0.5 text-xs bg-white border border-stone-200 rounded focus:outline-none focus:ring-1 focus:ring-kyoto-red"
+                    className="w-12 px-1 py-0.5 text-xs bg-tokyo-surface-alt border border-tokyo-border rounded focus:outline-none focus:ring-1 focus:ring-tokyo-blue"
                     autoFocus
                   />
                   <div className="flex gap-0.5">
@@ -411,8 +411,8 @@ export function HabitItem({
                         onClick={() => setIntervalUnit(unit)}
                         className={`px-1.5 py-0.5 text-xs rounded transition-colors ${
                           intervalUnit === unit
-                            ? 'bg-kyoto-red text-white'
-                            : 'bg-stone-100 text-stone-600 hover:bg-stone-200'
+                            ? 'bg-tokyo-blue text-white'
+                            : 'bg-tokyo-surface-alt text-tokyo-text-muted hover:bg-tokyo-border/30'
                         }`}
                       >
                         {unit}
@@ -421,13 +421,13 @@ export function HabitItem({
                   </div>
                   <button
                     onClick={handleSaveInterval}
-                    className="px-2 py-0.5 text-xs bg-kyoto-red text-white rounded hover:opacity-90"
+                    className="px-2 py-0.5 text-xs bg-tokyo-blue text-white rounded hover:bg-tokyo-blue-hover"
                   >
                     Save
                   </button>
                   <button
                     onClick={handleCancelInterval}
-                    className="px-2 py-0.5 text-xs text-stone-500 hover:text-stone-700"
+                    className="px-2 py-0.5 text-xs text-tokyo-text-muted hover:text-tokyo-text"
                   >
                     Cancel
                   </button>
@@ -436,28 +436,28 @@ export function HabitItem({
                 <>
                   <button
                     onClick={() => setIsEditingText(true)}
-                    className="text-xs text-stone-500 hover:text-stone-700"
+                    className="text-xs text-tokyo-cyan hover:text-tokyo-text"
                   >
                     Edit name
                   </button>
-                  <span className="text-stone-300">·</span>
+                  <span className="text-tokyo-text-dim">·</span>
                   <span
                     onClick={handleStartEditingInterval}
-                    className="text-xs text-stone-500 hover:text-stone-700 cursor-pointer"
+                    className="text-xs text-tokyo-yellow hover:text-tokyo-text cursor-pointer"
                   >
                     every {formatInterval(habit.repeatIntervalHours)}
                   </span>
-                  <span className="text-stone-300">·</span>
+                  <span className="text-tokyo-text-dim">·</span>
                   <button
                     onClick={() => onDelete(habit.id)}
-                    className="text-xs text-rose-500 hover:text-rose-700"
+                    className="text-xs text-tokyo-red hover:text-tokyo-red/80"
                   >
                     Delete
                   </button>
-                  <span className="text-stone-300">·</span>
+                  <span className="text-tokyo-text-dim">·</span>
                   <button
                     onClick={() => onSetRevealed(null)}
-                    className="text-xs text-stone-500 hover:text-stone-700"
+                    className="text-xs text-tokyo-green hover:text-tokyo-text"
                   >
                     Done
                   </button>
@@ -471,9 +471,9 @@ export function HabitItem({
         {habit.totalCompletions > 0 && (
           <div className="text-xs tabular-nums transition-all duration-300">
             {showStreakAnimation ? (
-              <span className="text-kyoto-red font-semibold animate-pulse">{streakTransition}</span>
+              <span className="text-tokyo-green font-semibold animate-pulse">{streakTransition}</span>
             ) : (
-              <span className="text-stone-400">{habit.totalCompletions}x</span>
+              <span className="text-tokyo-magenta">{habit.totalCompletions}x</span>
             )}
           </div>
         )}
@@ -481,12 +481,12 @@ export function HabitItem({
 
       {/* Reflection input after completing (only in Do mode) */}
       {!editMode && showReflectionInput && (
-        <div className="mt-3 ml-8 p-3 bg-stone-50 rounded-lg border border-stone-200">
+        <div className="mt-3 ml-8 p-3 bg-tokyo-surface-alt rounded-lg border border-tokyo-border">
           <div className="flex items-center justify-between mb-2">
-            <p className="text-xs text-stone-600 font-medium">Any reflection?</p>
+            <p className="text-xs text-tokyo-text-muted font-medium">Any reflection?</p>
             <button
               onClick={handleSkipReflection}
-              className="text-xs text-stone-400 hover:text-stone-600"
+              className="text-xs text-tokyo-text-dim hover:text-tokyo-text-muted"
             >
               Skip
             </button>
@@ -496,7 +496,7 @@ export function HabitItem({
               value={reflectionText}
               onChange={(e) => setReflectionText(e.target.value)}
               placeholder="What worked today? Anything to remember?"
-              className="w-full px-3 py-2 text-sm bg-white border border-stone-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-kyoto-red resize-none"
+              className="w-full px-3 py-2 text-sm bg-tokyo-surface-alt border border-tokyo-border rounded-lg focus:outline-none focus:ring-1 focus:ring-tokyo-blue resize-none"
               rows={2}
               autoFocus
             />
@@ -504,13 +504,13 @@ export function HabitItem({
               <div className="flex justify-end gap-2 mt-2">
                 <button
                   onClick={() => setReflectionText('')}
-                  className="px-3 py-1 text-xs text-stone-600 hover:bg-stone-50 rounded transition-colors"
+                  className="px-3 py-1 text-xs text-tokyo-text-muted hover:text-tokyo-text rounded transition-colors"
                 >
                   Clear
                 </button>
                 <button
                   onClick={handleSaveReflection}
-                  className="px-4 py-2 text-xs bg-kyoto-red text-white rounded-lg hover:opacity-90 transition-opacity"
+                  className="px-4 py-2 text-xs bg-tokyo-blue text-white rounded-lg hover:bg-tokyo-blue-hover transition-colors"
                 >
                   Save
                 </button>
@@ -522,15 +522,15 @@ export function HabitItem({
 
       {/* Notes panel (only in Do mode) */}
       {!editMode && showNotes && (
-        <div className="mt-3 ml-8 p-3 bg-stone-50 rounded-lg border border-stone-200">
+        <div className="mt-3 ml-8 p-3 bg-tokyo-surface-alt rounded-lg border border-tokyo-border">
           <div className="flex items-center justify-between mb-2">
-            <p className="text-xs text-stone-600 font-medium">Notes</p>
+            <p className="text-xs text-tokyo-text-muted font-medium">Notes</p>
             <button
               onClick={() => {
                 onSetRevealed(null);
                 setNewNoteText('');
               }}
-              className="text-xs text-stone-400 hover:text-stone-600"
+              className="text-xs text-tokyo-text-dim hover:text-tokyo-text-muted"
             >
               Close
             </button>
@@ -538,10 +538,10 @@ export function HabitItem({
           {habit.notes && habit.notes.length > 0 && (
             <div className="space-y-2 mb-3">
               {habit.notes.map((note, i) => (
-                <div key={i} className="text-sm text-stone-600 bg-white px-3 py-2 rounded border-l-2 border-stone-300">
+                <div key={i} className="text-sm text-tokyo-text bg-tokyo-surface px-3 py-2 rounded border-l-2 border-tokyo-yellow">
                   <div className="whitespace-pre-wrap">{note.text}</div>
                   {note.createdAt && (
-                    <div className="text-xs text-stone-400 mt-1">
+                    <div className="text-xs text-tokyo-text-dim mt-1">
                       {new Date(note.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
                     </div>
                   )}
@@ -555,20 +555,20 @@ export function HabitItem({
               value={newNoteText}
               onChange={(e) => setNewNoteText(e.target.value)}
               placeholder="Add a note..."
-              className="w-full px-3 py-2 text-sm bg-white border border-stone-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-kyoto-red resize-none"
+              className="w-full px-3 py-2 text-sm bg-tokyo-surface-alt border border-tokyo-border rounded-lg focus:outline-none focus:ring-1 focus:ring-tokyo-blue resize-none"
               rows={2}
             />
             {newNoteText.trim() && (
               <div className="flex justify-end gap-2 mt-2">
                 <button
                   onClick={() => setNewNoteText('')}
-                  className="px-3 py-1 text-xs text-stone-600 hover:bg-stone-50 rounded transition-colors"
+                  className="px-3 py-1 text-xs text-tokyo-text-muted hover:text-tokyo-text rounded transition-colors"
                 >
                   Clear
                 </button>
                 <button
                   onClick={handleSaveNewNote}
-                  className="px-4 py-2 text-xs bg-kyoto-red text-white rounded-lg hover:opacity-90 transition-opacity"
+                  className="px-4 py-2 text-xs bg-tokyo-blue text-white rounded-lg hover:bg-tokyo-blue-hover transition-colors"
                 >
                   Save
                 </button>

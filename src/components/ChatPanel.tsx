@@ -153,16 +153,16 @@ export function ChatPanel({ isOpen, onClose, habits, tasks, currentHour, onActio
       <div className="fixed inset-0 bg-black/20 z-40 sm:hidden" onClick={onClose} />
 
       {/* Panel */}
-      <div className="fixed inset-y-0 right-0 w-full sm:w-96 bg-white shadow-2xl z-50 flex flex-col border-l border-stone-200">
+      <div className="fixed inset-y-0 right-0 w-full sm:w-96 bg-tokyo-bg shadow-2xl z-50 flex flex-col border-l border-tokyo-border">
         {/* Header */}
-        <div className="px-4 py-3 border-b border-stone-200 flex items-center justify-between bg-white">
+        <div className="px-4 py-3 border-b border-tokyo-border flex items-center justify-between bg-tokyo-surface">
           <div>
-            <h3 className="text-xs font-semibold text-stone-500 uppercase tracking-wider">Planning</h3>
-            <p className="text-xs text-stone-400 mt-0.5">Powered by Claude</p>
+            <h3 className="text-xs font-semibold text-tokyo-text-muted uppercase tracking-wider">Planning</h3>
+            <p className="text-xs text-tokyo-text-dim mt-0.5">Powered by Claude</p>
           </div>
           <button
             onClick={onClose}
-            className="p-2 text-stone-400 hover:text-stone-600 hover:bg-white/50 rounded-lg transition-colors"
+            className="p-2 text-tokyo-text-muted hover:text-tokyo-text rounded-lg transition-colors"
           >
             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
@@ -175,7 +175,7 @@ export function ChatPanel({ isOpen, onClose, habits, tasks, currentHour, onActio
           {messages.map((msg) => (
             <div key={msg.id} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
               {msg.role === 'system' ? (
-                <div className="text-xs text-rose-600 bg-rose-50 px-3 py-2 rounded-lg max-w-[85%]">{msg.text}</div>
+                <div className="text-xs text-tokyo-red bg-tokyo-red/10 px-3 py-2 rounded-lg max-w-[85%]">{msg.text}</div>
               ) : (
                 <div className={`max-w-[85%] ${msg.role === 'user' ? 'order-1' : 'order-2'}`}>
                   {/* Only show text bubble if there's text after stripping JSON */}
@@ -183,8 +183,8 @@ export function ChatPanel({ isOpen, onClose, habits, tasks, currentHour, onActio
                     <div
                       className={`px-4 py-2.5 rounded-2xl text-sm leading-relaxed whitespace-pre-wrap ${
                         msg.role === 'user'
-                          ? 'bg-stone-800 text-white rounded-br-md'
-                          : 'bg-stone-100 text-stone-800 rounded-bl-md'
+                          ? 'bg-tokyo-blue text-white rounded-br-md'
+                          : 'bg-tokyo-surface text-tokyo-text rounded-bl-md'
                       }`}
                     >
                       {stripJsonActionBlocks(msg.text)}
@@ -213,7 +213,7 @@ export function ChatPanel({ isOpen, onClose, habits, tasks, currentHour, onActio
                               },
                             ]);
                           }}
-                          className="px-3 py-1.5 text-xs bg-kyoto-light text-kyoto-red rounded-lg hover:bg-kyoto-medium transition-colors flex items-center gap-1"
+                          className="px-3 py-1.5 text-xs bg-tokyo-blue-bg text-tokyo-blue rounded-lg hover:text-tokyo-blue-hover transition-colors flex items-center gap-1"
                         >
                           <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                             <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
@@ -232,9 +232,9 @@ export function ChatPanel({ isOpen, onClose, habits, tasks, currentHour, onActio
           {isTyping && streamingText && stripJsonActionBlocks(streamingText) && (
             <div className="flex justify-start">
               <div className="max-w-[85%]">
-                <div className="px-4 py-2.5 rounded-2xl rounded-bl-md text-sm leading-relaxed bg-stone-100 text-stone-800 whitespace-pre-wrap">
+                <div className="px-4 py-2.5 rounded-2xl rounded-bl-md text-sm leading-relaxed bg-tokyo-surface text-tokyo-text whitespace-pre-wrap">
                   {stripJsonActionBlocks(streamingText)}
-                  <span className="inline-block w-1 h-4 bg-stone-800 ml-0.5 animate-pulse" />
+                  <span className="inline-block w-1 h-4 bg-tokyo-text ml-0.5 animate-pulse" />
                 </div>
               </div>
             </div>
@@ -243,18 +243,18 @@ export function ChatPanel({ isOpen, onClose, habits, tasks, currentHour, onActio
           {/* Typing indicator (before streaming starts) */}
           {isTyping && !streamingText && (
             <div className="flex justify-start">
-              <div className="bg-stone-100 px-4 py-3 rounded-2xl rounded-bl-md">
+              <div className="bg-tokyo-surface px-4 py-3 rounded-2xl rounded-bl-md">
                 <div className="flex gap-1">
                   <div
-                    className="w-2 h-2 bg-stone-400 rounded-full animate-bounce"
+                    className="w-2 h-2 bg-tokyo-text-muted rounded-full animate-bounce"
                     style={{ animationDelay: '0ms' }}
                   />
                   <div
-                    className="w-2 h-2 bg-stone-400 rounded-full animate-bounce"
+                    className="w-2 h-2 bg-tokyo-text-muted rounded-full animate-bounce"
                     style={{ animationDelay: '150ms' }}
                   />
                   <div
-                    className="w-2 h-2 bg-stone-400 rounded-full animate-bounce"
+                    className="w-2 h-2 bg-tokyo-text-muted rounded-full animate-bounce"
                     style={{ animationDelay: '300ms' }}
                   />
                 </div>
@@ -266,7 +266,7 @@ export function ChatPanel({ isOpen, onClose, habits, tasks, currentHour, onActio
         </div>
 
         {/* Input */}
-        <div className="p-4 border-t border-stone-200 bg-stone-50">
+        <div className="p-4 border-t border-tokyo-border bg-tokyo-surface-alt">
           <div className="flex gap-2">
             <input
               ref={inputRef}
@@ -275,20 +275,20 @@ export function ChatPanel({ isOpen, onClose, habits, tasks, currentHour, onActio
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleSend()}
               placeholder="What do you want to work on?"
-              className="flex-1 px-4 py-2.5 bg-white border border-stone-200 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-kyoto-red"
+              className="flex-1 px-4 py-2.5 bg-tokyo-surface-alt border border-tokyo-border rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-tokyo-blue"
               disabled={isTyping}
             />
             <button
               onClick={handleSend}
               disabled={!input.trim() || isTyping}
-              className="px-4 py-2.5 bg-kyoto-red text-white rounded-lg hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-opacity"
+              className="px-4 py-2.5 bg-tokyo-blue text-white rounded-lg hover:bg-tokyo-blue-hover disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M5 12h14M12 5l7 7-7 7" />
               </svg>
             </button>
           </div>
-          <p className="text-xs text-stone-400 mt-2 text-center">
+          <p className="text-xs text-tokyo-text-dim mt-2 text-center">
             Try: "What should I focus on?" or "Break down the hiring task"
           </p>
         </div>
@@ -578,4 +578,3 @@ function findHabitIdByText(habits: Habit[], text: string): string | null {
 
   return null;
 }
-

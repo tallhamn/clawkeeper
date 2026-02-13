@@ -4,8 +4,9 @@
 
 @layer base {
   body {
-    @apply bg-stone-100 text-stone-700;
-    font-size: 15px;
+    @apply bg-tokyo-bg text-tokyo-text;
+    font-family: 'JetBrainsMono Nerd Font', 'JetBrains Mono', ui-monospace, monospace;
+    font-size: 13px;
   }
 }
 

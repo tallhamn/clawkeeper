@@ -495,8 +495,8 @@ function App() {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
-          <div className="w-8 h-8 border-4 border-amber-500 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-          <p className="text-stone-600">Loading Welltime...</p>
+          <div className="w-8 h-8 border-4 border-tokyo-blue border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+          <p className="text-tokyo-text-muted">Loading Welltime...</p>
         </div>
       </div>
     );
@@ -507,13 +507,13 @@ function App() {
       <div className={`transition-all duration-300 ${chatOpen ? 'mr-0 sm:mr-96' : ''}`}>
         <div className="max-w-2xl mx-auto px-4 py-6">
           {/* Header */}
-          <div className="bg-white rounded-2xl shadow-sm p-4 mb-3">
+          <div className="bg-tokyo-surface rounded-2xl p-4 mb-3">
             <div className="flex items-center gap-4">
-              <h1 className="text-lg font-semibold text-stone-800">WELLTIME</h1>
+              <h1 className="text-lg font-semibold text-tokyo-blue">WELLTIME</h1>
               <div className="flex-1 max-w-md">
                 <div className="relative">
                   <svg
-                    className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400"
+                    className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-tokyo-text-muted"
                     fill="none"
                     viewBox="0 0 24 24"
                     stroke="currentColor"
@@ -530,12 +530,12 @@ function App() {
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     placeholder="Search habits & tasks..."
-                    className="w-full pl-9 pr-3 py-1.5 text-sm bg-stone-50 border border-stone-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-kyoto-red focus:bg-white transition-colors"
+                    className="w-full pl-9 pr-3 py-1.5 text-sm bg-tokyo-surface-alt border border-tokyo-border rounded-lg focus:outline-none focus:ring-1 focus:ring-tokyo-blue transition-colors"
                   />
                   {searchQuery && (
                     <button
                       onClick={() => setSearchQuery('')}
-                      className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-stone-400 hover:text-stone-600"
+                      className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-tokyo-text-muted hover:text-tokyo-text"
                     >
                       <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                         <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
@@ -546,7 +546,7 @@ function App() {
               </div>
               <button
                 onClick={() => setChatOpen(true)}
-                className="px-3 py-1.5 bg-kyoto-light text-kyoto-red text-xs font-semibold rounded-lg hover:bg-kyoto-medium transition-colors whitespace-nowrap"
+                className="px-3 py-1.5 bg-tokyo-blue-bg text-tokyo-blue text-xs font-semibold rounded-lg hover:text-tokyo-blue-hover transition-colors whitespace-nowrap"
               >
                 Plan
               </button>
@@ -555,7 +555,7 @@ function App() {
 
           {/* Coach Message */}
           <div className="px-1 mb-5">
-            <p className="text-sm text-stone-600">{coachMessage}</p>
+            <p className="text-sm text-tokyo-cyan">{coachMessage}</p>
           </div>
 
         {/* Habits Section */}

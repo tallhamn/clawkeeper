@@ -49,19 +49,19 @@ export function HabitsSection({
   };
 
   return (
-    <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
-      <div className="px-4 py-3 border-b border-stone-100 flex items-center justify-between">
-        <span className="text-xs font-semibold text-stone-500 uppercase tracking-wider">Habits</span>
+    <div className="bg-tokyo-surface rounded-2xl overflow-hidden">
+      <div className="px-4 py-3 border-b border-tokyo-border flex items-center justify-between">
+        <span className="text-xs font-semibold text-tokyo-magenta uppercase tracking-wider">Habits</span>
         <div className="flex items-center gap-3">
           <button
             onClick={() => setEditMode(!editMode)}
-            className="text-xs text-stone-500 hover:text-stone-700 transition-colors"
+            className="text-xs text-tokyo-cyan hover:text-tokyo-text transition-colors"
           >
             {editMode ? 'Done' : 'Edit'}
           </button>
           <button
             onClick={() => setIsAdding(true)}
-            className="text-sm text-stone-400 hover:text-stone-600 transition-colors"
+            className="text-sm text-tokyo-green hover:text-tokyo-text transition-colors"
           >
             + Add habit
           </button>
@@ -75,7 +75,7 @@ export function HabitsSection({
       )}
       <div className="px-5 py-2">
         {filteredHabits.length > 0 ? (
-          <div className="divide-y divide-stone-50">
+          <div className="divide-y divide-tokyo-border/30">
             {filteredHabits.map((habit) => (
               <HabitItem
                 key={habit.id}
@@ -92,11 +92,11 @@ export function HabitsSection({
             ))}
           </div>
         ) : searchQuery ? (
-          <div className="py-8 text-center text-stone-400 text-sm">
+          <div className="py-8 text-center text-tokyo-text-dim text-sm">
             No habits matching "{searchQuery}"
           </div>
         ) : (
-          <div className="py-8 text-center text-stone-400 text-sm">
+          <div className="py-8 text-center text-tokyo-text-dim text-sm">
             No habits yet
           </div>
         )}

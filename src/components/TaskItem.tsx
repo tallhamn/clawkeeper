@@ -122,7 +122,7 @@ export function TaskItem({
   };
 
   return (
-    <div className={`${depth > 0 ? 'ml-2.5 pl-5 border-l-2 border-l-stone-200' : ''}`}>
+    <div className={`${depth > 0 ? 'ml-2.5 pl-5 border-l-2 border-l-tokyo-border' : ''}`}>
       <div className={`group py-2 ${task.completed && !showReflectionInput ? 'opacity-40' : ''}`}>
         <div className="flex items-start gap-2.5">
           <button
@@ -130,8 +130,8 @@ export function TaskItem({
             className={`mt-0.5 w-5 h-5 rounded border-2 flex items-center justify-center transition-all flex-shrink-0
               ${
                 isVisuallyCompleted
-                  ? 'bg-kyoto-red border-kyoto-red text-white'
-                  : 'border-stone-300 hover:border-stone-400'
+                  ? 'bg-tokyo-green border-tokyo-green text-white'
+                  : 'border-tokyo-blue/40 hover:border-tokyo-blue'
               }`}
           >
             {isVisuallyCompleted && (
@@ -156,7 +156,7 @@ export function TaskItem({
                         setIsEditingText(false);
                       }
                     }}
-                    className="w-full px-3 py-2 bg-stone-50 border border-stone-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-kyoto-red text-sm"
+                    className="w-full px-3 py-2 bg-tokyo-surface-alt border border-tokyo-border rounded-lg focus:outline-none focus:ring-1 focus:ring-tokyo-blue text-sm"
                     autoFocus
                   />
                 ) : (
@@ -168,7 +168,7 @@ export function TaskItem({
                         onSetRevealed({ type: 'task', id: task.id, mode: 'notes' });
                       }
                     }}
-                    className={`text-sm text-stone-700 ${isVisuallyCompleted && !showReflectionInput ? 'line-through text-stone-400' : ''} cursor-pointer hover:text-stone-600`}
+                    className={`text-sm text-tokyo-text-bright ${isVisuallyCompleted && !showReflectionInput ? 'line-through text-tokyo-text-muted' : ''} cursor-pointer hover:text-tokyo-blue`}
                   >
                     {task.text}
                   </span>
@@ -180,7 +180,7 @@ export function TaskItem({
                 <>
                   <button
                     onClick={() => onSetRevealed({ type: 'task', id: task.id, mode: 'add-subtask' })}
-                    className="p-1 text-stone-300 hover:text-stone-500 rounded opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity flex-shrink-0"
+                    className="p-1 text-tokyo-text-dim hover:text-tokyo-text-muted rounded opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity flex-shrink-0"
                     title="Add subtask"
                   >
                     <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -189,7 +189,7 @@ export function TaskItem({
                   </button>
                   <button
                     onClick={() => onSetRevealed({ type: 'task', id: task.id, mode: 'notes' })}
-                    className={`relative p-1 text-stone-300 hover:text-stone-500 rounded transition-opacity flex-shrink-0 ${
+                    className={`relative p-1 text-tokyo-text-dim hover:text-tokyo-text-muted rounded transition-opacity flex-shrink-0 ${
                       task.notes && task.notes.length > 0 ? 'opacity-100' : 'opacity-100 sm:opacity-0 sm:group-hover:opacity-100'
                     }`}
                     title="Notes"
@@ -198,14 +198,14 @@ export function TaskItem({
                       <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                     </svg>
                     {task.notes && task.notes.length > 0 && (
-                      <span className="absolute -top-1 -right-1 w-3.5 h-3.5 bg-kyoto-red text-white text-[9px] font-bold rounded-full flex items-center justify-center">
+                      <span className="absolute -top-1 -right-1 w-3.5 h-3.5 bg-tokyo-yellow text-tokyo-bg text-[9px] font-bold rounded-full flex items-center justify-center">
                         {task.notes.length}
                       </span>
                     )}
                   </button>
                   <button
                     onClick={() => onSetRevealed({ type: 'task', id: task.id, mode: 'edit' })}
-                    className="p-1 text-stone-300 hover:text-stone-500 rounded opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity flex-shrink-0"
+                    className="p-1 text-tokyo-text-dim hover:text-tokyo-text-muted rounded opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity flex-shrink-0"
                     title="Edit task"
                   >
                     <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
@@ -221,25 +221,25 @@ export function TaskItem({
               <div className="flex items-center gap-2 mt-1 flex-wrap">
                 <button
                   onClick={() => setIsEditingText(true)}
-                  className="text-xs text-stone-500 hover:text-stone-700"
+                  className="text-xs text-tokyo-cyan hover:text-tokyo-text"
                 >
                   Edit name
                 </button>
                 {onDelete && (
                   <>
-                    <span className="text-stone-300">·</span>
+                    <span className="text-tokyo-text-dim">·</span>
                     <button
                       onClick={() => onDelete(task.id)}
-                      className="text-xs text-rose-500 hover:text-rose-700"
+                      className="text-xs text-tokyo-red hover:text-tokyo-red/80"
                     >
                       Delete
                     </button>
                   </>
                 )}
-                <span className="text-stone-300">·</span>
+                <span className="text-tokyo-text-dim">·</span>
                 <button
                   onClick={() => onSetRevealed(null)}
-                  className="text-xs text-stone-500 hover:text-stone-700"
+                  className="text-xs text-tokyo-text-muted hover:text-tokyo-text"
                 >
                   Done
                 </button>
@@ -263,10 +263,10 @@ export function TaskItem({
                 }
               }}
               placeholder="Subtask..."
-              className="flex-1 px-3 py-1.5 text-sm bg-white border border-stone-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-kyoto-red"
+              className="flex-1 px-3 py-1.5 text-sm bg-tokyo-surface-alt border border-tokyo-border rounded-lg focus:outline-none focus:ring-1 focus:ring-tokyo-blue"
               autoFocus
             />
-            <button onClick={handleAddSubtask} className="px-3 py-1.5 text-xs bg-kyoto-red text-white rounded-lg hover:opacity-90 transition-opacity">
+            <button onClick={handleAddSubtask} className="px-3 py-1.5 text-xs bg-tokyo-blue text-white rounded-lg hover:bg-tokyo-blue-hover transition-colors">
               Add
             </button>
             <button
@@ -274,7 +274,7 @@ export function TaskItem({
                 setSubtaskText('');
                 onSetRevealed(null);
               }}
-              className="px-2 py-1.5 text-xs text-stone-400 hover:text-stone-600"
+              className="px-2 py-1.5 text-xs text-tokyo-text-muted hover:text-tokyo-text"
             >
               Cancel
             </button>
@@ -283,12 +283,12 @@ export function TaskItem({
 
         {/* Reflection input after completing */}
         {showReflectionInput && (
-          <div className="mt-2 ml-6 p-3 bg-stone-50 rounded-lg border border-stone-200">
+          <div className="mt-2 ml-6 p-3 bg-tokyo-surface-alt rounded-lg border border-tokyo-border">
             <div className="flex items-center justify-between mb-2">
-              <p className="text-xs text-stone-600 font-medium">Any reflection?</p>
+              <p className="text-xs text-tokyo-text-muted font-medium">Any reflection?</p>
               <button
                 onClick={handleSkipReflection}
-                className="text-xs text-stone-400 hover:text-stone-600"
+                className="text-xs text-tokyo-text-dim hover:text-tokyo-text-muted"
               >
                 Skip
               </button>
@@ -298,7 +298,7 @@ export function TaskItem({
                 value={reflectionText}
                 onChange={(e) => setReflectionText(e.target.value)}
                 placeholder="What worked today? Anything to remember?"
-                className="w-full px-3 py-2 text-sm bg-white border border-stone-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-kyoto-red resize-none"
+                className="w-full px-3 py-2 text-sm bg-tokyo-surface-alt border border-tokyo-border rounded-lg focus:outline-none focus:ring-1 focus:ring-tokyo-blue resize-none"
                 rows={2}
                 autoFocus
               />
@@ -306,13 +306,13 @@ export function TaskItem({
                 <div className="flex justify-end gap-2 mt-2">
                   <button
                     onClick={() => setReflectionText('')}
-                    className="px-3 py-1 text-xs text-stone-600 hover:bg-stone-50 rounded transition-colors"
+                    className="px-3 py-1 text-xs text-tokyo-text-muted hover:text-tokyo-text rounded transition-colors"
                   >
                     Clear
                   </button>
                   <button
                     onClick={handleSaveReflection}
-                    className="px-4 py-2 text-xs bg-kyoto-red text-white rounded-lg hover:opacity-90 transition-opacity"
+                    className="px-4 py-2 text-xs bg-tokyo-blue text-white rounded-lg hover:bg-tokyo-blue-hover transition-colors"
                   >
                     Save
                   </button>
@@ -324,15 +324,15 @@ export function TaskItem({
 
         {/* Notes panel */}
         {showNotes && (
-          <div className="mt-2 ml-6 p-3 bg-stone-50 rounded-lg border border-stone-200">
+          <div className="mt-2 ml-6 p-3 bg-tokyo-surface-alt rounded-lg border border-tokyo-border">
             <div className="flex items-center justify-between mb-2">
-              <p className="text-xs text-stone-600 font-medium">Notes</p>
+              <p className="text-xs text-tokyo-text-muted font-medium">Notes</p>
               <button
                 onClick={() => {
                   onSetRevealed(null);
                   setNoteText('');
                 }}
-                className="text-xs text-stone-400 hover:text-stone-600"
+                className="text-xs text-tokyo-text-dim hover:text-tokyo-text-muted"
               >
                 Close
               </button>
@@ -344,10 +344,10 @@ export function TaskItem({
                 {task.notes.map((note, i) => (
                   <div
                     key={i}
-                    className="group/note text-sm text-stone-600 px-3 py-2 border-l-2 border-amber-400"
+                    className="group/note text-sm text-tokyo-text px-3 py-2 border-l-2 border-tokyo-yellow"
                   >
                     <div className="flex items-start justify-between gap-2">
-                      <span className="text-[10px] text-stone-400 block mb-0.5">
+                      <span className="text-[10px] text-tokyo-text-dim block mb-0.5">
                         {new Date(note.createdAt).toLocaleString()}
                       </span>
                       <div className="flex gap-1 opacity-0 group-hover/note:opacity-100 transition-opacity flex-shrink-0">
@@ -356,14 +356,14 @@ export function TaskItem({
                             setEditingNoteIndex(i);
                             setEditingNoteText(note.text);
                           }}
-                          className="text-[10px] text-stone-400 hover:text-stone-600"
+                          className="text-[10px] text-tokyo-text-dim hover:text-tokyo-text-muted"
                         >
                           Edit
                         </button>
-                        <span className="text-stone-300">·</span>
+                        <span className="text-tokyo-text-dim">·</span>
                         <button
                           onClick={() => onDeleteNote(task.id, note.text)}
-                          className="text-[10px] text-rose-400 hover:text-rose-600"
+                          className="text-[10px] text-tokyo-red hover:text-tokyo-red/80"
                         >
                           Delete
                         </button>
@@ -374,14 +374,14 @@ export function TaskItem({
                         <textarea
                           value={editingNoteText}
                           onChange={(e) => setEditingNoteText(e.target.value)}
-                          className="w-full px-3 py-2 text-sm bg-white border border-stone-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-kyoto-red resize-none"
+                          className="w-full px-3 py-2 text-sm bg-tokyo-surface-alt border border-tokyo-border rounded-lg focus:outline-none focus:ring-1 focus:ring-tokyo-blue resize-none"
                           rows={2}
                           autoFocus
                         />
                         <div className="flex justify-end gap-2 mt-1">
                           <button
                             onClick={() => setEditingNoteIndex(null)}
-                            className="px-3 py-1 text-xs text-stone-500 hover:text-stone-700"
+                            className="px-3 py-1 text-xs text-tokyo-text-muted hover:text-tokyo-text"
                           >
                             Cancel
                           </button>
@@ -392,7 +392,7 @@ export function TaskItem({
                               }
                               setEditingNoteIndex(null);
                             }}
-                            className="px-3 py-1 text-xs bg-kyoto-red text-white rounded-lg hover:opacity-90 transition-opacity"
+                            className="px-3 py-1 text-xs bg-tokyo-blue text-white rounded-lg hover:bg-tokyo-blue-hover transition-colors"
                           >
                             Save
                           </button>
@@ -412,7 +412,7 @@ export function TaskItem({
                 value={noteText}
                 onChange={(e) => setNoteText(e.target.value)}
                 placeholder="Add a note..."
-                className="w-full px-3 py-2 text-sm bg-white border border-stone-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-kyoto-red resize-none"
+                className="w-full px-3 py-2 text-sm bg-tokyo-surface-alt border border-tokyo-border rounded-lg focus:outline-none focus:ring-1 focus:ring-tokyo-blue resize-none"
                 rows={2}
                 autoFocus
               />
@@ -420,7 +420,7 @@ export function TaskItem({
                 <div className="flex justify-end mt-2">
                   <button
                     onClick={handleSaveNote}
-                    className="px-4 py-2 text-xs bg-kyoto-red text-white rounded-lg hover:opacity-90 transition-opacity"
+                    className="px-4 py-2 text-xs bg-tokyo-blue text-white rounded-lg hover:bg-tokyo-blue-hover transition-colors"
                   >
                     Save
                   </button>

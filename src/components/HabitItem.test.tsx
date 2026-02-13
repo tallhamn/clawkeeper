@@ -48,7 +48,7 @@ describe('HabitItem', () => {
     it('should render unchecked checkbox when habit is due', () => {
       const { container } = render(<HabitItem {...mockProps} />);
 
-      const checkbox = container.querySelector('.border-stone-300');
+      const checkbox = container.querySelector('[class*="border-tokyo-blue/40"]');
       expect(checkbox).toBeInTheDocument();
       expect(checkbox?.className).toContain('rounded border-2');
     });
@@ -70,7 +70,7 @@ describe('HabitItem', () => {
     it('should call onToggle when checkbox is clicked', () => {
       const { container } = render(<HabitItem {...mockProps} />);
 
-      const checkbox = container.querySelector('.border-stone-300')!;
+      const checkbox = container.querySelector('[class*="border-tokyo-blue/40"]')!;
       fireEvent.click(checkbox);
 
       // Should call with 'complete' action
@@ -80,7 +80,7 @@ describe('HabitItem', () => {
     it('should open reflection input after completion', () => {
       const { container } = render(<HabitItem {...mockProps} />);
 
-      const checkbox = container.querySelector('.border-stone-300')!;
+      const checkbox = container.querySelector('[class*="border-tokyo-blue/40"]')!;
       fireEvent.click(checkbox);
 
       expect(mockProps.onSetRevealed).toHaveBeenCalledWith({
@@ -217,7 +217,7 @@ describe('HabitItem', () => {
       // Should now show checkbox instead of power symbol
       waitFor(() => {
         const checkbox = screen.getByRole('button');
-        expect(checkbox.className).toContain('border-stone-300');
+        expect(checkbox.className).toContain('border-tokyo-blue/40');
       });
     });
 
@@ -257,7 +257,7 @@ describe('HabitItem', () => {
 
       // Should not have clickable checkbox
       const buttons = screen.queryAllByRole('button');
-      const hasCheckbox = buttons.some(btn => btn.className.includes('border-stone-300'));
+      const hasCheckbox = buttons.some(btn => btn.className.includes('border-tokyo-blue/40'));
       expect(hasCheckbox).toBe(false);
     });
 
@@ -435,7 +435,7 @@ describe('HabitItem', () => {
       );
 
       // After waking up, should show empty checkbox that can be completed normally
-      const checkbox = container.querySelector('.border-stone-300');
+      const checkbox = container.querySelector('[class*="border-tokyo-blue/40"]');
       expect(checkbox).toBeInTheDocument();
     });
 
@@ -457,7 +457,7 @@ describe('HabitItem', () => {
       );
 
       // Click checkbox - should complete
-      const checkbox = container.querySelector('.border-stone-300');
+      const checkbox = container.querySelector('[class*="border-tokyo-blue/40"]');
       fireEvent.click(checkbox!);
 
       // Should call onToggle with 'complete' action
@@ -499,7 +499,7 @@ describe('HabitItem', () => {
       onToggle.mockClear();
 
       // Now click the checkbox - should complete (increment again)
-      const checkbox = container.querySelector('.border-stone-300');
+      const checkbox = container.querySelector('[class*="border-tokyo-blue/40"]');
       fireEvent.click(checkbox!);
 
       // Should call onToggle with 'complete' action
