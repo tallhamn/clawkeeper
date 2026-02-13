@@ -34,13 +34,11 @@ export function SplashScreen({ onDismiss }: SplashScreenProps) {
         {/* Main Message */}
         <div className="space-y-6 text-stone-600 leading-relaxed">
           <p className="text-lg">
-            Hitting goals is much easier when you follow proven patterns. People often make
-            things harder than they need to be.
+            Agentic task management — use AI to handle your todos.
           </p>
 
           <p className="text-lg">
-            Use AI to find paths that actually work. Then reflect on your progress and watch
-            Welltime adapt its recommendations to what works for you.
+            Track habits and tasks, stored as markdown for easy cross-agent access and editing.
           </p>
         </div>
 
