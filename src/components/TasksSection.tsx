@@ -8,17 +8,19 @@ interface TasksSectionProps {
   searchQuery: string;
   showCompleted: boolean;
   onToggle: (id: string) => void;
-  onAddReflection: (id: string, reflection: string) => void;
+  onAddNote: (id: string, text: string) => void;
+  onEditNote: (id: string, noteText: string, newNoteText: string) => void;
+  onDeleteNote: (id: string, noteText: string) => void;
   onAddSubtask: (parentId: string, text: string) => void;
   onAddTask: (text: string) => void;
   onDelete: (id: string) => void;
   onUpdateText: (id: string, text: string) => void;
-  revealedItem: { type: 'habit' | 'task'; id: string; mode: 'reflection' | 'edit' | 'view-reflections' | 'add-subtask' } | null;
-  onSetRevealed: (item: { type: 'habit' | 'task'; id: string; mode: 'reflection' | 'edit' | 'view-reflections' | 'add-subtask' } | null) => void;
+  revealedItem: { type: 'habit' | 'task'; id: string; mode: 'reflection' | 'edit' | 'add-subtask' | 'notes' } | null;
+  onSetRevealed: (item: { type: 'habit' | 'task'; id: string; mode: 'reflection' | 'edit' | 'add-subtask' | 'notes' } | null) => void;
   onToggleShowCompleted: () => void;
 }
 
-export function TasksSection({ tasks, searchQuery, showCompleted, onToggle, onAddReflection, onAddSubtask, onAddTask, onDelete, onUpdateText, revealedItem, onSetRevealed, onToggleShowCompleted }: TasksSectionProps) {
+export function TasksSection({ tasks, searchQuery, showCompleted, onToggle, onAddNote, onEditNote, onDeleteNote, onAddSubtask, onAddTask, onDelete, onUpdateText, revealedItem, onSetRevealed, onToggleShowCompleted }: TasksSectionProps) {
   const [isAdding, setIsAdding] = useState(false);
 
   // Filter tasks by search query
@@ -29,8 +31,8 @@ export function TasksSection({ tasks, searchQuery, showCompleted, onToggle, onAd
     // Check if task text matches
     if (task.text.toLowerCase().includes(lowerQuery)) return true;
 
-    // Check if any reflections match
-    if (task.reflections && task.reflections.some((r) => r.toLowerCase().includes(lowerQuery))) return true;
+    // Check if any notes match
+    if (task.notes && task.notes.some((n) => n.text.toLowerCase().includes(lowerQuery))) return true;
 
     // Check if any children match
     if (task.children && task.children.some((child) => filterTasksBySearch(child, query))) {
@@ -104,7 +106,9 @@ export function TasksSection({ tasks, searchQuery, showCompleted, onToggle, onAd
               depth={0}
               showCompleted={showCompleted}
               onToggle={onToggle}
-              onAddReflection={onAddReflection}
+              onAddNote={onAddNote}
+              onEditNote={onEditNote}
+              onDeleteNote={onDeleteNote}
               onAddSubtask={onAddSubtask}
               onDelete={onDelete}
               onUpdateText={onUpdateText}

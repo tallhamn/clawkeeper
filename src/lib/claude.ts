@@ -42,9 +42,10 @@ async function generateSystemPrompt(habits: Habit[], tasks: Task[], currentHour:
       const indent = '  '.repeat(depth);
       const status = task.completed ? '✓' : '○';
       result.push(`${indent}${status} ${task.text}`);
-      if (task.reflections && task.reflections.length > 0) {
-        const reflectionsText = task.reflections.slice(-2).map(r => `"${r}"`).join(', ');
-        result.push(`${indent}  → Reflections: ${reflectionsText}`);
+      if (task.notes && task.notes.length > 0) {
+        task.notes.forEach(n => {
+          result.push(`${indent}  📝 "${n.text}"`);
+        });
       }
       if (task.children && task.children.length > 0) {
         result = result.concat(flattenTasks(task.children, depth + 1));
@@ -60,8 +61,8 @@ async function generateSystemPrompt(habits: Habit[], tasks: Task[], currentHour:
       const status = available ? '○' : '✓';
       const completions = h.totalCompletions > 0 ? `${h.totalCompletions}x` : '';
       const interval = h.repeatIntervalHours < 24 ? `${h.repeatIntervalHours}h` : `${Math.floor(h.repeatIntervalHours / 24)}d`;
-      const reflections = h.reflections.length > 0 ? `\n    Reflections: ${h.reflections.slice(-2).map(r => `"${r}"`).join(', ')}` : '';
-      return `  ${status} ${h.text} (every ${interval}) ${completions}${reflections}`;
+      const notes = h.notes && h.notes.length > 0 ? h.notes.map(n => `\n    📝 "${n.text}"`).join('') : '';
+      return `  ${status} ${h.text} (every ${interval}) ${completions}${notes}`;
     })
     .join('\n');
 
@@ -99,11 +100,11 @@ ${tasksSummary}${archiveContext}
 - When suggesting task breakdowns, provide 3-5 concrete subtasks
 - **You have web search capability** - use it when users ask about real-time information, local businesses, addresses, prices, or current data
 
-**Using Reflections:**
-- Only reference reflections if they're directly relevant to the current request
-- Use the user's exact words when quoting reflections
-- Don't make up or infer reflections that aren't explicitly shown above
-- If there are no relevant reflections, just focus on the task breakdown
+**Using Notes:**
+- Only reference notes if they're directly relevant to the current request
+- Use the user's exact words when quoting notes
+- Don't make up or infer notes that aren't explicitly shown above
+- If there are no relevant notes, just focus on the task breakdown
 
 **Making Changes:**
 When the user asks you to make changes, propose them using JSON format in code blocks:
@@ -111,6 +112,14 @@ When the user asks you to make changes, propose them using JSON format in code b
 **Task Operations:**
 \`\`\`json-action
 {"type": "add_task", "text": "New task", "label": "Add 'New task'"}
+\`\`\`
+
+\`\`\`json-action
+{"type": "complete_task", "taskText": "exact task name", "label": "Check off 'task name'"}
+\`\`\`
+
+\`\`\`json-action
+{"type": "uncomplete_task", "taskText": "exact task name", "label": "Uncheck 'task name'"}
 \`\`\`
 
 \`\`\`json-action
@@ -130,6 +139,18 @@ When the user asks you to make changes, propose them using JSON format in code b
 \`\`\`
 
 Note: For move_task, use newParentText: null to move a task to the root level (make it a top-level task).
+
+\`\`\`json-action
+{"type": "add_note", "taskText": "exact task name", "noteText": "research finding or progress update", "label": "Add note to 'task name'"}
+\`\`\`
+
+\`\`\`json-action
+{"type": "edit_note", "taskText": "exact task name", "noteText": "exact existing note text", "newNoteText": "updated note text", "label": "Edit note on 'task name'"}
+\`\`\`
+
+\`\`\`json-action
+{"type": "delete_note", "taskText": "exact task name", "noteText": "exact existing note text", "label": "Delete note from 'task name'"}
+\`\`\`
 
 **Habit Operations:**
 \`\`\`json-action

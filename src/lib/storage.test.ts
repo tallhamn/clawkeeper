@@ -55,7 +55,7 @@ describe('Monthly Task Filtering', () => {
         text: 'Active task',
         completed: false,
         completedAt: null,
-        reflections: [],
+        notes: [],
         children: [],
       },
     ];
@@ -72,7 +72,7 @@ describe('Monthly Task Filtering', () => {
         text: 'Completed this month',
         completed: true,
         completedAt: `${currentMonth}-05`,
-        reflections: [],
+        notes: [],
         children: [],
       },
     ];
@@ -89,7 +89,7 @@ describe('Monthly Task Filtering', () => {
         text: 'Completed last month',
         completed: true,
         completedAt: `${lastMonth}-05`,
-        reflections: [],
+        notes: [],
         children: [],
       },
     ];
@@ -105,14 +105,14 @@ describe('Monthly Task Filtering', () => {
         text: 'Active parent',
         completed: false,
         completedAt: null,
-        reflections: [],
+        notes: [],
         children: [
           {
             id: 't2',
             text: 'Completed child this month',
             completed: true,
             completedAt: `${currentMonth}-05`,
-            reflections: [],
+            notes: [],
             children: [],
           },
           {
@@ -120,7 +120,7 @@ describe('Monthly Task Filtering', () => {
             text: 'Completed child last month',
             completed: true,
             completedAt: `${lastMonth}-15`,
-            reflections: [],
+            notes: [],
             children: [],
           },
         ],
@@ -141,14 +141,14 @@ describe('Monthly Task Filtering', () => {
         text: 'Completed parent',
         completed: true,
         completedAt: `${lastMonth}-01`,
-        reflections: [],
+        notes: [],
         children: [
           {
             id: 't2',
             text: 'Child',
             completed: true,
             completedAt: `${lastMonth}-02`,
-            reflections: [],
+            notes: [],
             children: [],
           },
         ],
@@ -166,7 +166,7 @@ describe('Monthly Task Filtering', () => {
         text: 'Active',
         completed: false,
         completedAt: null,
-        reflections: [],
+        notes: [],
         children: [],
       },
       {
@@ -174,7 +174,7 @@ describe('Monthly Task Filtering', () => {
         text: 'Completed this month',
         completed: true,
         completedAt: `${currentMonth}-10`,
-        reflections: [],
+        notes: [],
         children: [],
       },
       {
@@ -182,7 +182,7 @@ describe('Monthly Task Filtering', () => {
         text: 'Completed last month',
         completed: true,
         completedAt: `${lastMonth}-20`,
-        reflections: [],
+        notes: [],
         children: [],
       },
     ];

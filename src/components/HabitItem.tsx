@@ -10,9 +10,9 @@ interface HabitItemProps {
   onDelete: (id: string) => void;
   onUpdateInterval: (id: string, intervalHours: number) => void;
   onUpdateText: (id: string, text: string) => void;
-  onAddReflection: (id: string, reflection: string) => void;
-  revealedItem: { type: 'habit' | 'task'; id: string; mode: 'reflection' | 'edit' | 'view-reflections' | 'add-subtask' } | null;
-  onSetRevealed: (item: { type: 'habit' | 'task'; id: string; mode: 'reflection' | 'edit' | 'view-reflections' | 'add-subtask' } | null) => void;
+  onAddNote: (id: string, text: string) => void;
+  revealedItem: { type: 'habit' | 'task'; id: string; mode: 'reflection' | 'edit' | 'add-subtask' | 'notes' } | null;
+  onSetRevealed: (item: { type: 'habit' | 'task'; id: string; mode: 'reflection' | 'edit' | 'add-subtask' | 'notes' } | null) => void;
 }
 
 type IntervalUnit = 'minutes' | 'hours' | 'days' | 'weeks';
@@ -24,14 +24,14 @@ export function HabitItem({
   onDelete,
   onUpdateInterval,
   onUpdateText,
-  onAddReflection,
+  onAddNote,
   revealedItem,
   onSetRevealed,
 }: HabitItemProps) {
   const [isEditingText, setIsEditingText] = useState(false);
   const [editText, setEditText] = useState(habit.text);
   const [reflectionText, setReflectionText] = useState('');
-  const [newReflectionText, setNewReflectionText] = useState('');
+  const [newNoteText, setNewNoteText] = useState('');
   const [isEditingInterval, setIsEditingInterval] = useState(false);
   const [intervalValue, setIntervalValue] = useState(1);
   const [intervalUnit, setIntervalUnit] = useState<IntervalUnit>('days');
@@ -59,7 +59,7 @@ export function HabitItem({
   // Check if this habit is currently revealed
   const isExpanded = revealedItem?.type === 'habit' && revealedItem?.id === habit.id && revealedItem?.mode === 'edit';
   const showReflectionInput = revealedItem?.type === 'habit' && revealedItem?.id === habit.id && revealedItem?.mode === 'reflection';
-  const showReflections = revealedItem?.type === 'habit' && revealedItem?.id === habit.id && revealedItem?.mode === 'view-reflections';
+  const showNotes = revealedItem?.type === 'habit' && revealedItem?.id === habit.id && revealedItem?.mode === 'notes';
 
   // Detect totalCompletions changes and show animation
   useEffect(() => {
@@ -175,7 +175,7 @@ export function HabitItem({
 
   const handleSaveReflection = () => {
     if (reflectionText.trim()) {
-      onAddReflection(habit.id, reflectionText.trim());
+      onAddNote(habit.id, reflectionText.trim());
     }
     setReflectionText('');
     onSetRevealed(null);
@@ -206,11 +206,10 @@ export function HabitItem({
   };
 
   const handleTextClick = () => {
-    // Click text to view reflections
-    if (showReflections) {
+    if (showNotes) {
       onSetRevealed(null);
     } else {
-      onSetRevealed({ type: 'habit', id: habit.id, mode: 'view-reflections' });
+      onSetRevealed({ type: 'habit', id: habit.id, mode: 'notes' });
     }
   };
 
@@ -221,10 +220,10 @@ export function HabitItem({
     setIsEditingText(false);
   };
 
-  const handleSaveNewReflection = () => {
-    if (newReflectionText.trim()) {
-      onAddReflection(habit.id, newReflectionText.trim());
-      setNewReflectionText('');
+  const handleSaveNewNote = () => {
+    if (newNoteText.trim()) {
+      onAddNote(habit.id, newNoteText.trim());
+      setNewNoteText('');
     }
   };
 
@@ -521,49 +520,54 @@ export function HabitItem({
         </div>
       )}
 
-      {/* View past reflections (only in Do mode) */}
-      {!editMode && showReflections && (
+      {/* Notes panel (only in Do mode) */}
+      {!editMode && showNotes && (
         <div className="mt-3 ml-8 p-3 bg-stone-50 rounded-lg border border-stone-200">
           <div className="flex items-center justify-between mb-2">
-            <p className="text-xs text-stone-600 font-medium">Any reflection?</p>
+            <p className="text-xs text-stone-600 font-medium">Notes</p>
             <button
               onClick={() => {
                 onSetRevealed(null);
-                setNewReflectionText('');
+                setNewNoteText('');
               }}
               className="text-xs text-stone-400 hover:text-stone-600"
             >
               Close
             </button>
           </div>
-          {habit.reflections && habit.reflections.length > 0 && (
+          {habit.notes && habit.notes.length > 0 && (
             <div className="space-y-2 mb-3">
-              {habit.reflections.map((reflection, i) => (
-                <div key={i} className="text-sm text-stone-600 bg-white px-3 py-2 rounded border border-stone-200">
-                  {reflection}
+              {habit.notes.map((note, i) => (
+                <div key={i} className="text-sm text-stone-600 bg-white px-3 py-2 rounded border-l-2 border-stone-300">
+                  <div>{note.text}</div>
+                  {note.createdAt && (
+                    <div className="text-xs text-stone-400 mt-1">
+                      {new Date(note.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
           )}
-          {/* Add new reflection */}
+          {/* Add new note */}
           <div>
             <textarea
-              value={newReflectionText}
-              onChange={(e) => setNewReflectionText(e.target.value)}
-              placeholder="Any thoughts on this?"
+              value={newNoteText}
+              onChange={(e) => setNewNoteText(e.target.value)}
+              placeholder="Add a note..."
               className="w-full px-3 py-2 text-sm bg-white border border-stone-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-kyoto-red resize-none"
               rows={2}
             />
-            {newReflectionText.trim() && (
+            {newNoteText.trim() && (
               <div className="flex justify-end gap-2 mt-2">
                 <button
-                  onClick={() => setNewReflectionText('')}
+                  onClick={() => setNewNoteText('')}
                   className="px-3 py-1 text-xs text-stone-600 hover:bg-stone-50 rounded transition-colors"
                 >
                   Clear
                 </button>
                 <button
-                  onClick={handleSaveNewReflection}
+                  onClick={handleSaveNewNote}
                   className="px-4 py-2 text-xs bg-kyoto-red text-white rounded-lg hover:opacity-90 transition-opacity"
                 >
                   Save

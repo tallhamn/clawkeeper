@@ -10,7 +10,7 @@ describe('TasksSection', () => {
       text: 'Task 1',
       completed: false,
       completedAt: null,
-      reflections: [],
+      notes: [],
       children: [],
     },
     {
@@ -18,7 +18,7 @@ describe('TasksSection', () => {
       text: 'Completed Task',
       completed: true,
       completedAt: '2026-01-08',
-      reflections: [],
+      notes: [],
       children: [],
     },
   ];
@@ -28,7 +28,9 @@ describe('TasksSection', () => {
     searchQuery: '',
     showCompleted: false,
     onToggle: vi.fn(),
-    onAddReflection: vi.fn(),
+    onAddNote: vi.fn(),
+    onEditNote: vi.fn(),
+    onDeleteNote: vi.fn(),
     onAddSubtask: vi.fn(),
     onAddTask: vi.fn(),
     onDelete: vi.fn(),
@@ -59,7 +61,7 @@ describe('TasksSection', () => {
       text: 'Recently Completed Task',
       completed: true,
       completedAt: '2026-01-08',
-      reflections: [],
+      notes: [],
       children: [],
     };
 
@@ -100,14 +102,14 @@ describe('TasksSection', () => {
       text: 'Parent Task',
       completed: true,
       completedAt: '2026-01-08',
-      reflections: [],
+      notes: [],
       children: [
         {
           id: 'child',
           text: 'Incomplete Child',
           completed: false,
           completedAt: null,
-          reflections: [],
+          notes: [],
           children: [],
         },
       ],
@@ -133,7 +135,7 @@ describe('TasksSection', () => {
       text: 'Old Task',
       completed: true,
       completedAt: '2025-12-15', // Previous month
-      reflections: [],
+      notes: [],
       children: [],
     };
 
@@ -165,5 +167,39 @@ describe('TasksSection', () => {
 
     // Should be visible now because it's incomplete
     expect(screen.getByText('Old Task')).toBeInTheDocument();
+  });
+
+  it('should find tasks by note content when searching', () => {
+    const tasksWithNotes: Task[] = [
+      {
+        id: 't1',
+        text: 'Research API',
+        completed: false,
+        completedAt: null,
+        notes: [
+          { text: 'Rate limit is 100 req/min', createdAt: '2026-02-12T10:00:00Z' },
+        ],
+        children: [],
+      },
+      {
+        id: 't2',
+        text: 'Other task',
+        completed: false,
+        completedAt: null,
+        notes: [],
+        children: [],
+      },
+    ];
+
+    render(
+      <TasksSection
+        {...defaultProps}
+        tasks={tasksWithNotes}
+        searchQuery="rate limit"
+      />
+    );
+
+    expect(screen.getByText('Research API')).toBeInTheDocument();
+    expect(screen.queryByText('Other task')).not.toBeInTheDocument();
   });
 });

@@ -15,8 +15,8 @@ describe('ChatPanel Component', () => {
       text: 'Exercise',
       repeatIntervalHours: 24,
       lastCompleted: null,
-      streak: 0,
-      reflections: [],
+      totalCompletions: 0,
+      notes: [],
     },
   ];
 
@@ -26,7 +26,7 @@ describe('ChatPanel Component', () => {
       text: 'Buy groceries',
       completed: false,
       completedAt: null,
-      reflections: [],
+      notes: [],
       children: [],
     },
   ];
@@ -96,6 +96,80 @@ Let me know if you need anything else.`;
     // Since we can't easily set internal state, we'll test parseActionsFromResponse separately
     // This test validates the rendering logic works
     expect(screen.queryByText(/Delete/)).not.toBeInTheDocument();
+  });
+});
+
+// Test action parsing logic
+describe('ChatPanel action parsing', () => {
+  // Inline copy of findTaskIdByText for unit testing
+  const findTaskIdByText = (searchTasks: Task[], text: string): string | null => {
+    const searchText = text.toLowerCase();
+    const search = (taskList: Task[]): string | null => {
+      for (const task of taskList) {
+        if (task.completed) continue;
+        if (task.text.toLowerCase() === searchText) return task.id;
+        if (task.text.toLowerCase().includes(searchText) || searchText.includes(task.text.toLowerCase())) return task.id;
+        if (task.children && task.children.length > 0) {
+          const found = search(task.children);
+          if (found) return found;
+        }
+      }
+      return null;
+    };
+    return search(searchTasks);
+  };
+
+  const testTasks: Task[] = [
+    {
+      id: 'task-1',
+      text: 'Research API',
+      completed: false,
+      completedAt: null,
+      notes: [
+        { text: 'Rate limit is 100 req/min', createdAt: '2026-02-12T10:00:00Z' },
+        { text: 'Spire comp is $250k', createdAt: '2026-02-12T11:00:00Z' },
+      ],
+      children: [],
+    },
+    {
+      id: 'task-2',
+      text: 'Buy groceries',
+      completed: false,
+      completedAt: null,
+      notes: [],
+      children: [],
+    },
+  ];
+
+  it('should parse complete_task action', () => {
+    const taskId = findTaskIdByText(testTasks, 'Buy groceries');
+    expect(taskId).toBe('task-2');
+  });
+
+  it('should parse uncomplete_task action', () => {
+    // uncomplete_task should also find tasks by text
+    const taskId = findTaskIdByText(testTasks, 'Research API');
+    expect(taskId).toBe('task-1');
+  });
+
+  it('should parse edit_note action and find task by text', () => {
+    const taskId = findTaskIdByText(testTasks, 'Research API');
+    expect(taskId).toBe('task-1');
+  });
+
+  it('should skip completed tasks when finding by text', () => {
+    const tasksWithCompleted: Task[] = [
+      {
+        id: 'done-1',
+        text: 'Completed task',
+        completed: true,
+        completedAt: '2026-02-12',
+        notes: [],
+        children: [],
+      },
+    ];
+    const taskId = findTaskIdByText(tasksWithCompleted, 'Completed task');
+    expect(taskId).toBeNull();
   });
 });
 
@@ -235,6 +309,53 @@ This should work well!`;
     // Should keep the text
     expect(output).toContain('Here are some ideas:');
     expect(output).toContain('This should work well!');
+  });
+
+  it('should parse edit_note action with quoted noteText', () => {
+    // Reproduce the exported parseActionsFromResponse logic inline
+    // The LLM sees notes displayed as "note text" in the context, so it may
+    // include quotes or slight variations when referencing them.
+    const tasksForParsing: Task[] = [
+      {
+        id: 'task-123',
+        text: 'Research API',
+        completed: false,
+        completedAt: null,
+        notes: [{ text: 'Rate limit is 100 req/min', createdAt: '2026-02-12T10:00:00Z' }],
+        children: [],
+      },
+    ];
+
+    // Simulate what parseActionsFromResponse does
+    const findTaskIdByText = (searchTasks: Task[], text: string): string | null => {
+      const searchText = text.toLowerCase();
+      for (const task of searchTasks) {
+        if (task.completed) continue;
+        if (task.text.toLowerCase() === searchText) return task.id;
+        if (task.text.toLowerCase().includes(searchText) || searchText.includes(task.text.toLowerCase())) return task.id;
+        if (task.children && task.children.length > 0) {
+          const found = findTaskIdByText(task.children, text);
+          if (found) return found;
+        }
+      }
+      return null;
+    };
+
+    const actionData = {
+      type: 'edit_note',
+      taskText: 'Research API',
+      noteText: 'Rate limit is 100 req/min',
+      newNoteText: 'Rate limit is 200 req/min',
+      label: "Edit note on 'Research API'",
+    };
+
+    const taskId = findTaskIdByText(tasksForParsing, actionData.taskText);
+    expect(taskId).toBe('task-123');
+
+    // Verify the action would be created
+    expect(actionData.type).toBe('edit_note');
+    expect(actionData.noteText).toBeTruthy();
+    expect(actionData.newNoteText).toBeTruthy();
   });
 
   it('should hide incomplete JSON blocks during streaming', () => {

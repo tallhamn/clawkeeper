@@ -24,7 +24,7 @@ describe('TaskItem Component', () => {
     text: 'Test task',
     completed: false,
     completedAt: null,
-    reflections: [],
+    notes: [],
     children: [],
   };
 
@@ -35,7 +35,9 @@ describe('TaskItem Component', () => {
         depth={0}
         showCompleted={true}
         onToggle={vi.fn()}
-        onAddReflection={vi.fn()}
+        onAddNote={vi.fn()}
+        onEditNote={vi.fn()}
+        onDeleteNote={vi.fn()}
         onAddSubtask={vi.fn()}
         revealedItem={null}
         onSetRevealed={vi.fn()}
@@ -54,7 +56,9 @@ describe('TaskItem Component', () => {
         depth={0}
         showCompleted={true}
         onToggle={vi.fn()}
-        onAddReflection={vi.fn()}
+        onAddNote={vi.fn()}
+        onEditNote={vi.fn()}
+        onDeleteNote={vi.fn()}
         onAddSubtask={vi.fn()}
         revealedItem={null}
         onSetRevealed={onSetRevealed}
@@ -84,7 +88,9 @@ describe('TaskItem Component', () => {
         depth={0}
         showCompleted={true}
         onToggle={onToggle}
-        onAddReflection={vi.fn()}
+        onAddNote={vi.fn()}
+        onEditNote={vi.fn()}
+        onDeleteNote={vi.fn()}
         onAddSubtask={vi.fn()}
         revealedItem={null}
         onSetRevealed={vi.fn()}
@@ -106,7 +112,9 @@ describe('TaskItem Component', () => {
         depth={0}
         showCompleted={true}
         onToggle={vi.fn()}
-        onAddReflection={vi.fn()}
+        onAddNote={vi.fn()}
+        onEditNote={vi.fn()}
+        onDeleteNote={vi.fn()}
         onAddSubtask={vi.fn()}
         revealedItem={null}
         onSetRevealed={vi.fn()}
@@ -120,7 +128,9 @@ describe('TaskItem Component', () => {
         depth={0}
         showCompleted={true}
         onToggle={vi.fn()}
-        onAddReflection={vi.fn()}
+        onAddNote={vi.fn()}
+        onEditNote={vi.fn()}
+        onDeleteNote={vi.fn()}
         onAddSubtask={vi.fn()}
         revealedItem={{ type: 'task', id: 't1', mode: 'reflection' }}
         onSetRevealed={vi.fn()}
@@ -139,7 +149,7 @@ describe('TaskItem Component', () => {
           text: 'Subtask 1',
           completed: false,
           completedAt: null,
-          reflections: [],
+          notes: [],
           children: [],
         },
       ],
@@ -151,7 +161,9 @@ describe('TaskItem Component', () => {
         depth={0}
         showCompleted={true}
         onToggle={vi.fn()}
-        onAddReflection={vi.fn()}
+        onAddNote={vi.fn()}
+        onEditNote={vi.fn()}
+        onDeleteNote={vi.fn()}
         onAddSubtask={vi.fn()}
         revealedItem={null}
         onSetRevealed={vi.fn()}
@@ -175,7 +187,9 @@ describe('TaskItem Component', () => {
         depth={0}
         showCompleted={false}
         onToggle={vi.fn()}
-        onAddReflection={vi.fn()}
+        onAddNote={vi.fn()}
+        onEditNote={vi.fn()}
+        onDeleteNote={vi.fn()}
         onAddSubtask={vi.fn()}
         revealedItem={null}
         onSetRevealed={vi.fn()}
@@ -185,27 +199,32 @@ describe('TaskItem Component', () => {
     expect(container.firstChild).toBeNull();
   });
 
-  it('should display multiple reflections', () => {
-    const taskWithReflections: Task = {
+  it('should display multiple notes', () => {
+    const taskWithNotes: Task = {
       ...mockTask,
-      reflections: ['First reflection', 'Second reflection'],
+      notes: [
+        { text: 'First note', createdAt: '2026-02-12T10:00:00Z' },
+        { text: 'Second note', createdAt: '2026-02-12T11:00:00Z' },
+      ],
     };
 
     render(
       <TaskItem
-        task={taskWithReflections}
+        task={taskWithNotes}
         depth={0}
         showCompleted={true}
         onToggle={vi.fn()}
-        onAddReflection={vi.fn()}
+        onAddNote={vi.fn()}
+        onEditNote={vi.fn()}
+        onDeleteNote={vi.fn()}
         onAddSubtask={vi.fn()}
-        revealedItem={{ type: 'task', id: 't1', mode: 'view-reflections' }}
+        revealedItem={{ type: 'task', id: 't1', mode: 'notes' }}
         onSetRevealed={vi.fn()}
       />
     );
 
-    expect(screen.getByText('First reflection')).toBeInTheDocument();
-    expect(screen.getByText('Second reflection')).toBeInTheDocument();
+    expect(screen.getByText('First note')).toBeInTheDocument();
+    expect(screen.getByText('Second note')).toBeInTheDocument();
   });
 
   it('should uncheck completed task with single click', () => {
@@ -224,7 +243,9 @@ describe('TaskItem Component', () => {
         depth={0}
         showCompleted={true}
         onToggle={onToggle}
-        onAddReflection={vi.fn()}
+        onAddNote={vi.fn()}
+        onEditNote={vi.fn()}
+        onDeleteNote={vi.fn()}
         onAddSubtask={vi.fn()}
         revealedItem={null}
         onSetRevealed={onSetRevealed}
@@ -253,7 +274,9 @@ describe('TaskItem Component', () => {
         depth={0}
         showCompleted={true}
         onToggle={onToggle}
-        onAddReflection={vi.fn()}
+        onAddNote={vi.fn()}
+        onEditNote={vi.fn()}
+        onDeleteNote={vi.fn()}
         onAddSubtask={vi.fn()}
         revealedItem={null}
         onSetRevealed={onSetRevealed}
@@ -272,5 +295,151 @@ describe('TaskItem Component', () => {
     expect(onSetRevealed).toHaveBeenCalledWith(null);
     // Should NOT have called onToggle (task not actually completed)
     expect(onToggle).not.toHaveBeenCalled();
+  });
+
+  it('should show note count badge when task has notes', () => {
+    const taskWithNotes: Task = {
+      ...mockTask,
+      notes: [
+        { text: 'First note', createdAt: '2026-02-12T10:00:00Z' },
+        { text: 'Second note', createdAt: '2026-02-12T11:00:00Z' },
+      ],
+    };
+
+    render(
+      <TaskItem
+        task={taskWithNotes}
+        depth={0}
+        showCompleted={true}
+        onToggle={vi.fn()}
+        onAddNote={vi.fn()}
+        onEditNote={vi.fn()}
+        onDeleteNote={vi.fn()}
+        onAddSubtask={vi.fn()}
+        revealedItem={null}
+        onSetRevealed={vi.fn()}
+      />
+    );
+
+    expect(screen.getByText('2')).toBeInTheDocument();
+  });
+
+  it('should show notes panel with existing notes', () => {
+    const taskWithNotes: Task = {
+      ...mockTask,
+      notes: [
+        { text: 'Research finding here', createdAt: '2026-02-12T10:00:00Z' },
+      ],
+    };
+
+    render(
+      <TaskItem
+        task={taskWithNotes}
+        depth={0}
+        showCompleted={true}
+        onToggle={vi.fn()}
+        onAddNote={vi.fn()}
+        onEditNote={vi.fn()}
+        onDeleteNote={vi.fn()}
+        onAddSubtask={vi.fn()}
+        revealedItem={{ type: 'task', id: 't1', mode: 'notes' }}
+        onSetRevealed={vi.fn()}
+      />
+    );
+
+    expect(screen.getByText('Notes')).toBeInTheDocument();
+    expect(screen.getByText('Research finding here')).toBeInTheDocument();
+    expect(screen.getByPlaceholderText('Add a note...')).toBeInTheDocument();
+  });
+
+  it('should call onAddNote when saving a new note', () => {
+    const onAddNote = vi.fn();
+
+    render(
+      <TaskItem
+        task={mockTask}
+        depth={0}
+        showCompleted={true}
+        onToggle={vi.fn()}
+        onAddNote={onAddNote}
+        onEditNote={vi.fn()}
+        onDeleteNote={vi.fn()}
+        onAddSubtask={vi.fn()}
+        revealedItem={{ type: 'task', id: 't1', mode: 'notes' }}
+        onSetRevealed={vi.fn()}
+      />
+    );
+
+    const textarea = screen.getByPlaceholderText('Add a note...');
+    fireEvent.change(textarea, { target: { value: 'My new note' } });
+    fireEvent.click(screen.getByText('Save'));
+
+    expect(onAddNote).toHaveBeenCalledWith('t1', 'My new note');
+  });
+
+  it('should call onDeleteNote when deleting a note', () => {
+    const onDeleteNote = vi.fn();
+    const taskWithNotes: Task = {
+      ...mockTask,
+      notes: [
+        { text: 'Note to delete', createdAt: '2026-02-12T10:00:00Z' },
+      ],
+    };
+
+    render(
+      <TaskItem
+        task={taskWithNotes}
+        depth={0}
+        showCompleted={true}
+        onToggle={vi.fn()}
+        onAddNote={vi.fn()}
+        onEditNote={vi.fn()}
+        onDeleteNote={onDeleteNote}
+        onAddSubtask={vi.fn()}
+        revealedItem={{ type: 'task', id: 't1', mode: 'notes' }}
+        onSetRevealed={vi.fn()}
+      />
+    );
+
+    fireEvent.click(screen.getByText('Delete'));
+
+    expect(onDeleteNote).toHaveBeenCalledWith('t1', 'Note to delete');
+  });
+
+  it('should allow editing a note inline', () => {
+    const onEditNote = vi.fn();
+    const taskWithNotes: Task = {
+      ...mockTask,
+      notes: [
+        { text: 'Original note', createdAt: '2026-02-12T10:00:00Z' },
+      ],
+    };
+
+    render(
+      <TaskItem
+        task={taskWithNotes}
+        depth={0}
+        showCompleted={true}
+        onToggle={vi.fn()}
+        onAddNote={vi.fn()}
+        onEditNote={onEditNote}
+        onDeleteNote={vi.fn()}
+        onAddSubtask={vi.fn()}
+        revealedItem={{ type: 'task', id: 't1', mode: 'notes' }}
+        onSetRevealed={vi.fn()}
+      />
+    );
+
+    // Click edit
+    fireEvent.click(screen.getByText('Edit'));
+
+    // Should show textarea with existing text
+    const textarea = screen.getByDisplayValue('Original note');
+    fireEvent.change(textarea, { target: { value: 'Updated note' } });
+
+    // Save
+    fireEvent.click(screen.getAllByText('Save')[0]);
+
+    expect(onEditNote).toHaveBeenCalledWith('t1', 'Original note', 'Updated note');
   });
 });

@@ -27,7 +27,7 @@ export function getDefaultState(): AppState {
         repeatIntervalHours: 4, // Comes back throughout the day
         lastCompleted: null,
         totalCompletions: 0,
-        reflections: [],
+        notes: [],
       },
       {
         id: generateId(),
@@ -35,7 +35,7 @@ export function getDefaultState(): AppState {
         repeatIntervalHours: 24, // Once a day
         lastCompleted: null,
         totalCompletions: 0,
-        reflections: [],
+        notes: [],
       },
       {
         id: generateId(),
@@ -43,7 +43,7 @@ export function getDefaultState(): AppState {
         repeatIntervalHours: 24, // Once a day
         lastCompleted: null,
         totalCompletions: 0,
-        reflections: [],
+        notes: [],
       },
     ],
     tasks: [
@@ -52,14 +52,14 @@ export function getDefaultState(): AppState {
         text: 'Explore Welltime',
         completed: false,
         completedAt: null,
-        reflections: [],
+        notes: [],
         children: [
           {
             id: generateId(),
             text: 'Complete a habit and add a reflection',
             completed: false,
             completedAt: null,
-            reflections: [],
+            notes: [],
             children: [],
           },
           {
@@ -67,7 +67,7 @@ export function getDefaultState(): AppState {
             text: 'Check off this subtask to see how it works',
             completed: false,
             completedAt: null,
-            reflections: [],
+            notes: [],
             children: [],
           },
         ],
@@ -77,7 +77,7 @@ export function getDefaultState(): AppState {
         text: 'Plan something fun for this week',
         completed: false,
         completedAt: null,
-        reflections: [],
+        notes: [],
         children: [],
       },
     ],

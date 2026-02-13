@@ -21,7 +21,7 @@ function App() {
   const [showSplash, setShowSplash] = useState(false);
 
   // Track which element is currently revealed (reflection input, edit controls, etc.)
-  const [revealedItem, setRevealedItem] = useState<{ type: 'habit' | 'task'; id: string; mode: 'reflection' | 'edit' | 'view-reflections' | 'add-subtask' } | null>(null);
+  const [revealedItem, setRevealedItem] = useState<{ type: 'habit' | 'task'; id: string; mode: 'reflection' | 'edit' | 'add-subtask' | 'notes' } | null>(null);
 
   // Undo functionality
   const [undoState, setUndoState] = useState<AppState | null>(null);
@@ -186,12 +186,6 @@ function App() {
     setHabits((prev) => prev.map((h) => (h.id === id ? { ...h, text } : h)));
   };
 
-  const addHabitReflection = (id: string, reflection: string) => {
-    setHabits((prev) =>
-      prev.map((h) => (h.id === id ? { ...h, reflections: [...(h.reflections || []), reflection] } : h))
-    );
-  };
-
   const addHabit = (text: string, intervalHours: number) => {
     if (text.trim()) {
       setHabits((prev) => [
@@ -202,7 +196,7 @@ function App() {
           totalCompletions: 0,
           lastCompleted: null,
           repeatIntervalHours: intervalHours,
-          reflections: [],
+          notes: [],
         },
       ]);
     }
@@ -230,8 +224,41 @@ function App() {
     });
   };
 
-  const addTaskReflection = (id: string, reflection: string) => {
-    setTasks((prev) => findAndUpdate(prev, id, (t) => ({ ...t, reflections: [...(t.reflections || []), reflection] })));
+  const addTaskNote = (id: string, text: string) => {
+    setTasks((prev) => findAndUpdate(prev, id, (t) => ({
+      ...t,
+      notes: [...(t.notes || []), { text, createdAt: new Date().toISOString() }],
+    })));
+  };
+
+  const addHabitNote = (id: string, text: string) => {
+    setHabits((prev) =>
+      prev.map((h) => (h.id === id ? { ...h, notes: [...(h.notes || []), { text, createdAt: new Date().toISOString() }] } : h))
+    );
+  };
+
+  const normalizeNoteText = (text: string) => text.replace(/^["']|["']$/g, '').trim();
+
+  const noteMatches = (noteText: string, searchText: string): boolean => {
+    const a = normalizeNoteText(noteText);
+    const b = normalizeNoteText(searchText);
+    return a === b || a.toLowerCase() === b.toLowerCase();
+  };
+
+  const editTaskNote = (id: string, noteText: string, newNoteText: string) => {
+    setTasks((prev) => findAndUpdate(prev, id, (t) => ({
+      ...t,
+      notes: (t.notes || []).map((n) =>
+        noteMatches(n.text, noteText) ? { ...n, text: newNoteText } : n
+      ),
+    })));
+  };
+
+  const deleteTaskNote = (id: string, noteText: string) => {
+    setTasks((prev) => findAndUpdate(prev, id, (t) => ({
+      ...t,
+      notes: (t.notes || []).filter((n) => !noteMatches(n.text, noteText)),
+    })));
   };
 
   const addTask = (text: string) => {
@@ -243,7 +270,7 @@ function App() {
           text: text.trim(),
           completed: false,
           completedAt: null,
-          reflections: [],
+          notes: [],
           children: [],
         },
       ]);
@@ -261,7 +288,7 @@ function App() {
             text,
             completed: false,
             completedAt: null,
-            reflections: [],
+            notes: [],
             children: [],
           },
         ],
@@ -343,6 +370,24 @@ function App() {
         }
         break;
 
+      case 'complete_task':
+        if (action.taskId) {
+          toggleTask(action.taskId);
+          setUndoMessage(`Checked off: "${action.taskText || 'task'}"`);
+          setShowUndo(true);
+          setTimeout(() => setShowUndo(false), 10000);
+        }
+        break;
+
+      case 'uncomplete_task':
+        if (action.taskId) {
+          toggleTask(action.taskId);
+          setUndoMessage(`Unchecked: "${action.taskText || 'task'}"`);
+          setShowUndo(true);
+          setTimeout(() => setShowUndo(false), 10000);
+        }
+        break;
+
       case 'delete_task':
         if (action.taskId) {
           deleteTask(action.taskId);
@@ -366,6 +411,33 @@ function App() {
           moveTask(action.taskId, action.newParentId ?? null);
           const destination = action.newParentText ? `under "${action.newParentText}"` : 'to top level';
           setUndoMessage(`Moved task ${destination}`);
+          setShowUndo(true);
+          setTimeout(() => setShowUndo(false), 10000);
+        }
+        break;
+
+      case 'add_note':
+        if (action.taskId && action.noteText) {
+          addTaskNote(action.taskId, action.noteText);
+          setUndoMessage(`Added note to "${action.taskText || 'task'}"`);
+          setShowUndo(true);
+          setTimeout(() => setShowUndo(false), 10000);
+        }
+        break;
+
+      case 'edit_note':
+        if (action.taskId && action.noteText && action.newNoteText) {
+          editTaskNote(action.taskId, action.noteText, action.newNoteText);
+          setUndoMessage(`Updated note on "${action.taskText || 'task'}"`);
+          setShowUndo(true);
+          setTimeout(() => setShowUndo(false), 10000);
+        }
+        break;
+
+      case 'delete_note':
+        if (action.taskId && action.noteText) {
+          deleteTaskNote(action.taskId, action.noteText);
+          setUndoMessage(`Deleted note from "${action.taskText || 'task'}"`);
           setShowUndo(true);
           setTimeout(() => setShowUndo(false), 10000);
         }
@@ -496,7 +568,7 @@ function App() {
           onDelete={deleteHabit}
           onUpdateInterval={updateHabitInterval}
           onUpdateText={updateHabitText}
-          onAddReflection={addHabitReflection}
+          onAddNote={addHabitNote}
           onAddHabit={addHabit}
           revealedItem={revealedItem}
           onSetRevealed={setRevealedItem}
@@ -511,7 +583,9 @@ function App() {
           searchQuery={searchQuery}
           showCompleted={showCompleted}
           onToggle={toggleTask}
-          onAddReflection={addTaskReflection}
+          onAddNote={addTaskNote}
+          onEditNote={editTaskNote}
+          onDeleteNote={deleteTaskNote}
           onAddSubtask={addSubtask}
           onAddTask={addTask}
           onDelete={deleteTask}

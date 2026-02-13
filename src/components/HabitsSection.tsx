@@ -12,10 +12,10 @@ interface HabitsSectionProps {
   onDelete: (id: string) => void;
   onUpdateInterval: (id: string, intervalHours: number) => void;
   onUpdateText: (id: string, text: string) => void;
-  onAddReflection: (id: string, reflection: string) => void;
+  onAddNote: (id: string, text: string) => void;
   onAddHabit: (text: string, intervalHours: number) => void;
-  revealedItem: { type: 'habit' | 'task'; id: string; mode: 'reflection' | 'edit' | 'view-reflections' | 'add-subtask' } | null;
-  onSetRevealed: (item: { type: 'habit' | 'task'; id: string; mode: 'reflection' | 'edit' | 'view-reflections' | 'add-subtask' } | null) => void;
+  revealedItem: { type: 'habit' | 'task'; id: string; mode: 'reflection' | 'edit' | 'add-subtask' | 'notes' } | null;
+  onSetRevealed: (item: { type: 'habit' | 'task'; id: string; mode: 'reflection' | 'edit' | 'add-subtask' | 'notes' } | null) => void;
 }
 
 export function HabitsSection({
@@ -27,7 +27,7 @@ export function HabitsSection({
   onDelete,
   onUpdateInterval,
   onUpdateText,
-  onAddReflection,
+  onAddNote,
   onAddHabit,
   revealedItem,
   onSetRevealed,
@@ -40,7 +40,7 @@ export function HabitsSection({
     if (!searchQuery) return true;
     const lowerQuery = searchQuery.toLowerCase();
     return habit.text.toLowerCase().includes(lowerQuery) ||
-           habit.reflections.some((r) => r.toLowerCase().includes(lowerQuery));
+           (habit.notes && habit.notes.some((n) => n.text.toLowerCase().includes(lowerQuery)));
   });
 
   const handleAddHabit = (text: string, intervalHours: number) => {
@@ -85,7 +85,7 @@ export function HabitsSection({
                 onDelete={onDelete}
                 onUpdateInterval={onUpdateInterval}
                 onUpdateText={onUpdateText}
-                onAddReflection={onAddReflection}
+                onAddNote={onAddNote}
                 revealedItem={revealedItem}
                 onSetRevealed={onSetRevealed}
               />

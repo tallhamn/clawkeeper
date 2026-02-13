@@ -45,7 +45,7 @@ describe('Storage Filtering - Unchecked Tasks', () => {
         text: 'Unchecked Task',
         completed: false,
         completedAt: null,  // Set to null when unchecked
-        reflections: [],
+        notes: [],
         children: [],
       },
     ];
@@ -66,7 +66,9 @@ describe('Storage Filtering - Unchecked Tasks', () => {
         text: 'Toggled Task',
         completed: false,  // Unchecked
         completedAt: null,  // Set to null by toggleTask
-        reflections: ['Did this earlier'],
+        notes: [
+          { text: 'Did this earlier', createdAt: '2026-02-12T10:00:00Z' },
+        ],
         children: [],
       },
     ];
@@ -76,8 +78,9 @@ describe('Storage Filtering - Unchecked Tasks', () => {
     expect(filtered).toHaveLength(1);
     expect(filtered[0].text).toBe('Toggled Task');
     expect(filtered[0].completed).toBe(false);
-    // Reflections should be preserved
-    expect(filtered[0].reflections).toEqual(['Did this earlier']);
+    // Notes should be preserved
+    expect(filtered[0].notes).toHaveLength(1);
+    expect(filtered[0].notes[0].text).toBe('Did this earlier');
   });
 
   it('should keep incomplete task with completed children from previous month', () => {
@@ -87,14 +90,14 @@ describe('Storage Filtering - Unchecked Tasks', () => {
         text: 'Parent Task',
         completed: false,
         completedAt: null,
-        reflections: [],
+        notes: [],
         children: [
           {
             id: 'child1',
             text: 'Old Completed Child',
             completed: true,
             completedAt: '2025-12-15',  // Previous month
-            reflections: [],
+            notes: [],
             children: [],
           },
         ],
@@ -117,7 +120,7 @@ describe('Storage Filtering - Unchecked Tasks', () => {
         text: 'Old Completed Task',
         completed: true,
         completedAt: '2025-12-15',  // Previous month
-        reflections: [],
+        notes: [],
         children: [],
       },
     ];
@@ -136,7 +139,7 @@ describe('Storage Filtering - Unchecked Tasks', () => {
         text: 'Recently Completed Task',
         completed: true,
         completedAt: `${currentMonth}-08`,  // This month
-        reflections: [],
+        notes: [],
         children: [],
       },
     ];
@@ -156,7 +159,7 @@ describe('Storage Filtering - Unchecked Tasks', () => {
         text: 'Incomplete Task',
         completed: false,
         completedAt: null,
-        reflections: [],
+        notes: [],
         children: [],
       },
       {
@@ -164,7 +167,7 @@ describe('Storage Filtering - Unchecked Tasks', () => {
         text: 'Completed This Month',
         completed: true,
         completedAt: `${currentMonth}-05`,
-        reflections: [],
+        notes: [],
         children: [],
       },
       {
@@ -172,7 +175,7 @@ describe('Storage Filtering - Unchecked Tasks', () => {
         text: 'Old Completed Task',
         completed: true,
         completedAt: '2025-12-15',
-        reflections: [],
+        notes: [],
         children: [],
       },
       {
@@ -180,7 +183,7 @@ describe('Storage Filtering - Unchecked Tasks', () => {
         text: 'Unchecked Task',
         completed: false,
         completedAt: null,
-        reflections: [],
+        notes: [],
         children: [],
       },
     ];

@@ -25,7 +25,7 @@ describe('HabitItem', () => {
     repeatIntervalHours: 24,
     lastCompleted: null,
     totalCompletions: 0,
-    reflections: [],
+    notes: [],
   };
 
   const mockProps = {
@@ -35,7 +35,7 @@ describe('HabitItem', () => {
     onDelete: vi.fn(),
     onUpdateInterval: vi.fn(),
     onUpdateText: vi.fn(),
-    onAddReflection: vi.fn(),
+    onAddNote: vi.fn(),
     revealedItem: null,
     onSetRevealed: vi.fn(),
   };
@@ -116,7 +116,7 @@ describe('HabitItem', () => {
       const saveButton = screen.getByText('Save');
       fireEvent.click(saveButton);
 
-      expect(mockProps.onAddReflection).toHaveBeenCalledWith('test-habit-1', 'Great progress today!');
+      expect(mockProps.onAddNote).toHaveBeenCalledWith('test-habit-1', 'Great progress today!');
       expect(mockProps.onSetRevealed).toHaveBeenCalledWith(null);
     });
 
@@ -131,7 +131,7 @@ describe('HabitItem', () => {
       const skipButton = screen.getByText('Skip');
       fireEvent.click(skipButton);
 
-      expect(mockProps.onAddReflection).not.toHaveBeenCalled();
+      expect(mockProps.onAddNote).not.toHaveBeenCalled();
       expect(mockProps.onSetRevealed).toHaveBeenCalledWith(null);
     });
 
@@ -342,41 +342,44 @@ describe('HabitItem', () => {
     });
   });
 
-  describe('View Reflections', () => {
-    const habitWithReflections: Habit = {
+  describe('View Notes', () => {
+    const habitWithNotes: Habit = {
       ...mockHabit,
-      reflections: ['First reflection', 'Second reflection'],
+      notes: [
+        { text: 'First note', createdAt: '2026-02-12T10:00:00Z' },
+        { text: 'Second note', createdAt: '2026-02-12T11:00:00Z' },
+      ],
     };
 
-    it('should show past reflections when text is clicked', () => {
+    it('should show past notes when text is clicked', () => {
       const props = {
         ...mockProps,
-        habit: habitWithReflections,
-        revealedItem: { type: 'habit' as const, id: 'test-habit-1', mode: 'view-reflections' as const },
+        habit: habitWithNotes,
+        revealedItem: { type: 'habit' as const, id: 'test-habit-1', mode: 'notes' as const },
       };
 
       render(<HabitItem {...props} />);
 
-      expect(screen.getByText('First reflection')).toBeInTheDocument();
-      expect(screen.getByText('Second reflection')).toBeInTheDocument();
+      expect(screen.getByText('First note')).toBeInTheDocument();
+      expect(screen.getByText('Second note')).toBeInTheDocument();
     });
 
-    it('should allow adding new reflection to past reflections', () => {
+    it('should allow adding new note', () => {
       const props = {
         ...mockProps,
-        habit: habitWithReflections,
-        revealedItem: { type: 'habit' as const, id: 'test-habit-1', mode: 'view-reflections' as const },
+        habit: habitWithNotes,
+        revealedItem: { type: 'habit' as const, id: 'test-habit-1', mode: 'notes' as const },
       };
 
       render(<HabitItem {...props} />);
 
-      const textarea = screen.getByPlaceholderText(/Any thoughts on this/);
-      fireEvent.change(textarea, { target: { value: 'New reflection' } });
+      const textarea = screen.getByPlaceholderText(/Add a note/);
+      fireEvent.change(textarea, { target: { value: 'New note' } });
 
       const saveButton = screen.getByText('Save');
       fireEvent.click(saveButton);
 
-      expect(mockProps.onAddReflection).toHaveBeenCalledWith('test-habit-1', 'New reflection');
+      expect(mockProps.onAddNote).toHaveBeenCalledWith('test-habit-1', 'New note');
     });
   });
 

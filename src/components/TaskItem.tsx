@@ -7,10 +7,12 @@ interface TaskItemProps {
   depth: number;
   showCompleted: boolean;
   onToggle: (id: string) => void;
-  onAddReflection: (id: string, reflection: string) => void;
+  onAddNote: (id: string, text: string) => void;
+  onEditNote: (id: string, noteText: string, newNoteText: string) => void;
+  onDeleteNote: (id: string, noteText: string) => void;
   onAddSubtask: (parentId: string, text: string) => void;
-  revealedItem: { type: 'habit' | 'task'; id: string; mode: 'reflection' | 'edit' | 'view-reflections' | 'add-subtask' } | null;
-  onSetRevealed: (item: { type: 'habit' | 'task'; id: string; mode: 'reflection' | 'edit' | 'view-reflections' | 'add-subtask' } | null) => void;
+  revealedItem: { type: 'habit' | 'task'; id: string; mode: 'reflection' | 'edit' | 'add-subtask' | 'notes' } | null;
+  onSetRevealed: (item: { type: 'habit' | 'task'; id: string; mode: 'reflection' | 'edit' | 'add-subtask' | 'notes' } | null) => void;
   onDelete?: (id: string) => void;
   onUpdateText?: (id: string, text: string) => void;
 }
@@ -20,7 +22,9 @@ export function TaskItem({
   depth,
   showCompleted,
   onToggle,
-  onAddReflection,
+  onAddNote,
+  onEditNote,
+  onDeleteNote,
   onAddSubtask,
   revealedItem,
   onSetRevealed,
@@ -28,8 +32,10 @@ export function TaskItem({
   onUpdateText,
 }: TaskItemProps) {
   const [reflectionText, setReflectionText] = useState('');
-  const [newReflectionText, setNewReflectionText] = useState('');
   const [subtaskText, setSubtaskText] = useState('');
+  const [noteText, setNoteText] = useState('');
+  const [editingNoteIndex, setEditingNoteIndex] = useState<number | null>(null);
+  const [editingNoteText, setEditingNoteText] = useState('');
   const [pendingCompletion, setPendingCompletion] = useState(false);
   const [isEditingText, setIsEditingText] = useState(false);
   const [editText, setEditText] = useState(task.text);
@@ -37,7 +43,7 @@ export function TaskItem({
   // Check if this task is currently revealed
   const showReflectionInput = revealedItem?.type === 'task' && revealedItem?.id === task.id && revealedItem?.mode === 'reflection';
   const showAddSubtask = revealedItem?.type === 'task' && revealedItem?.id === task.id && revealedItem?.mode === 'add-subtask';
-  const showReflection = revealedItem?.type === 'task' && revealedItem?.id === task.id && revealedItem?.mode === 'view-reflections';
+  const showNotes = revealedItem?.type === 'task' && revealedItem?.id === task.id && revealedItem?.mode === 'notes';
   const isExpanded = revealedItem?.type === 'task' && revealedItem?.id === task.id && revealedItem?.mode === 'edit';
 
   const visibleChildren = showCompleted
@@ -76,7 +82,7 @@ export function TaskItem({
 
   const handleSaveReflection = () => {
     if (reflectionText.trim()) {
-      onAddReflection(task.id, reflectionText.trim());
+      onAddNote(task.id, reflectionText.trim());
     }
     setReflectionText('');
     setPendingCompletion(false);
@@ -101,10 +107,10 @@ export function TaskItem({
     }
   };
 
-  const handleSaveNewReflection = () => {
-    if (newReflectionText.trim()) {
-      onAddReflection(task.id, newReflectionText.trim());
-      setNewReflectionText('');
+  const handleSaveNote = () => {
+    if (noteText.trim()) {
+      onAddNote(task.id, noteText.trim());
+      setNoteText('');
     }
   };
 
@@ -156,10 +162,10 @@ export function TaskItem({
                 ) : (
                   <span
                     onClick={() => {
-                      if (showReflection) {
+                      if (showNotes) {
                         onSetRevealed(null);
                       } else {
-                        onSetRevealed({ type: 'task', id: task.id, mode: 'view-reflections' });
+                        onSetRevealed({ type: 'task', id: task.id, mode: 'notes' });
                       }
                     }}
                     className={`text-sm text-stone-700 ${isVisuallyCompleted && !showReflectionInput ? 'line-through text-stone-400' : ''} cursor-pointer hover:text-stone-600`}
@@ -180,6 +186,22 @@ export function TaskItem({
                     <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
                     </svg>
+                  </button>
+                  <button
+                    onClick={() => onSetRevealed({ type: 'task', id: task.id, mode: 'notes' })}
+                    className={`relative p-1 text-stone-300 hover:text-stone-500 rounded transition-opacity flex-shrink-0 ${
+                      task.notes && task.notes.length > 0 ? 'opacity-100' : 'opacity-100 sm:opacity-0 sm:group-hover:opacity-100'
+                    }`}
+                    title="Notes"
+                  >
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                    </svg>
+                    {task.notes && task.notes.length > 0 && (
+                      <span className="absolute -top-1 -right-1 w-3.5 h-3.5 bg-kyoto-red text-white text-[9px] font-bold rounded-full flex items-center justify-center">
+                        {task.notes.length}
+                      </span>
+                    )}
                   </button>
                   <button
                     onClick={() => onSetRevealed({ type: 'task', id: task.id, mode: 'edit' })}
@@ -300,15 +322,15 @@ export function TaskItem({
           </div>
         )}
 
-        {/* View/add reflections */}
-        {showReflection && (
+        {/* Notes panel */}
+        {showNotes && (
           <div className="mt-2 ml-6 p-3 bg-stone-50 rounded-lg border border-stone-200">
             <div className="flex items-center justify-between mb-2">
-              <p className="text-xs text-stone-600 font-medium">Any reflection?</p>
+              <p className="text-xs text-stone-600 font-medium">Notes</p>
               <button
                 onClick={() => {
                   onSetRevealed(null);
-                  setNewReflectionText('');
+                  setNoteText('');
                 }}
                 className="text-xs text-stone-400 hover:text-stone-600"
               >
@@ -316,39 +338,88 @@ export function TaskItem({
               </button>
             </div>
 
-            {/* Show existing reflections */}
-            {task.reflections && task.reflections.length > 0 && (
+            {/* Show existing notes */}
+            {task.notes && task.notes.length > 0 && (
               <div className="space-y-2 mb-3">
-                {task.reflections.map((reflection, i) => (
+                {task.notes.map((note, i) => (
                   <div
                     key={i}
-                    className="text-sm text-stone-600 italic px-3 py-2 border-l-2 border-stone-300"
+                    className="group/note text-sm text-stone-600 px-3 py-2 border-l-2 border-amber-400"
                   >
-                    {reflection}
+                    <div className="flex items-start justify-between gap-2">
+                      <span className="text-[10px] text-stone-400 block mb-0.5">
+                        {new Date(note.createdAt).toLocaleString()}
+                      </span>
+                      <div className="flex gap-1 opacity-0 group-hover/note:opacity-100 transition-opacity flex-shrink-0">
+                        <button
+                          onClick={() => {
+                            setEditingNoteIndex(i);
+                            setEditingNoteText(note.text);
+                          }}
+                          className="text-[10px] text-stone-400 hover:text-stone-600"
+                        >
+                          Edit
+                        </button>
+                        <span className="text-stone-300">·</span>
+                        <button
+                          onClick={() => onDeleteNote(task.id, note.text)}
+                          className="text-[10px] text-rose-400 hover:text-rose-600"
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    </div>
+                    {editingNoteIndex === i ? (
+                      <div className="mt-1">
+                        <textarea
+                          value={editingNoteText}
+                          onChange={(e) => setEditingNoteText(e.target.value)}
+                          className="w-full px-3 py-2 text-sm bg-white border border-stone-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-kyoto-red resize-none"
+                          rows={2}
+                          autoFocus
+                        />
+                        <div className="flex justify-end gap-2 mt-1">
+                          <button
+                            onClick={() => setEditingNoteIndex(null)}
+                            className="px-3 py-1 text-xs text-stone-500 hover:text-stone-700"
+                          >
+                            Cancel
+                          </button>
+                          <button
+                            onClick={() => {
+                              if (editingNoteText.trim()) {
+                                onEditNote(task.id, note.text, editingNoteText.trim());
+                              }
+                              setEditingNoteIndex(null);
+                            }}
+                            className="px-3 py-1 text-xs bg-kyoto-red text-white rounded-lg hover:opacity-90 transition-opacity"
+                          >
+                            Save
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <span>{note.text}</span>
+                    )}
                   </div>
                 ))}
               </div>
             )}
 
-            {/* Add new reflection */}
+            {/* Add new note */}
             <div>
               <textarea
-                value={newReflectionText}
-                onChange={(e) => setNewReflectionText(e.target.value)}
-                placeholder="Any thoughts on this?"
+                value={noteText}
+                onChange={(e) => setNoteText(e.target.value)}
+                placeholder="Add a note..."
                 className="w-full px-3 py-2 text-sm bg-white border border-stone-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-kyoto-red resize-none"
                 rows={2}
+                autoFocus
               />
-              {newReflectionText.trim() && (
-                <div className="flex justify-end gap-2 mt-2">
+              {noteText.trim() && (
+                <div className="flex justify-end mt-2">
                   <button
-                    onClick={() => setNewReflectionText('')}
-                    className="px-3 py-1 text-xs text-stone-600 hover:bg-stone-50 rounded transition-colors"
-                  >
-                    Clear
-                  </button>
-                  <button
-                    onClick={handleSaveNewReflection}
+                    onClick={handleSaveNote}
                     className="px-4 py-2 text-xs bg-kyoto-red text-white rounded-lg hover:opacity-90 transition-opacity"
                   >
                     Save
@@ -368,7 +439,9 @@ export function TaskItem({
           depth={depth + 1}
           showCompleted={showCompleted}
           onToggle={onToggle}
-          onAddReflection={onAddReflection}
+          onAddNote={onAddNote}
+          onEditNote={onEditNote}
+          onDeleteNote={onDeleteNote}
           onAddSubtask={onAddSubtask}
           onDelete={onDelete}
           onUpdateText={onUpdateText}

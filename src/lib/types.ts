@@ -23,8 +23,14 @@ export interface Habit {
   repeatIntervalHours: number; // How often the habit repeats (default: 24)
   lastCompleted: string | null; // ISO timestamp of when it was last completed
   totalCompletions: number; // All-time completion count
-  reflections: string[];
+  notes: Note[];
   forcedAvailable?: boolean; // If true, habit is available even if interval hasn't passed
+}
+
+// Note model
+export interface Note {
+  text: string;
+  createdAt: string; // ISO timestamp
 }
 
 // Task model (recursive for subtasks)
@@ -33,7 +39,7 @@ export interface Task {
   text: string;
   completed: boolean;
   completedAt: string | null;  // ISO date string (YYYY-MM-DD)
-  reflections: string[];
+  notes: Note[];
   children: Task[];
 }
 
@@ -56,9 +62,13 @@ export type LLMActionType =
   | 'add_task'
   | 'add_subtask'
   | 'complete_task'
+  | 'uncomplete_task'
   | 'delete_task'
   | 'edit_task'
   | 'move_task'
+  | 'add_note'
+  | 'edit_note'
+  | 'delete_note'
   | 'add_habit'
   | 'delete_habit'
   | 'edit_habit'
@@ -75,6 +85,8 @@ export interface LLMAction {
   taskId?: string;
   newParentText?: string;  // For move_task: new parent task name
   newParentId?: string;    // For move_task: new parent task id (or null for root)
+  noteText?: string;       // For add_note/edit_note/delete_note: the note content
+  newNoteText?: string;    // For edit_note: the replacement text
   habitText?: string;
   habitId?: string;
   repeatIntervalHours?: number;

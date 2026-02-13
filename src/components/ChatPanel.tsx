@@ -20,19 +20,19 @@ interface ChatPanelProps {
 }
 
 export function ChatPanel({ isOpen, onClose, habits, tasks, currentHour, onAction }: ChatPanelProps) {
-  // Count total reflections from habits and tasks
-  const countReflections = () => {
+  // Count total notes from habits and tasks
+  const countNotes = () => {
     let count = 0;
-    // Count habit reflections
+    // Count habit notes
     habits.forEach((habit) => {
-      count += habit.reflections?.length || 0;
+      count += habit.notes?.length || 0;
     });
-    // Count task reflections recursively
-    const countTaskReflections = (task: Task): void => {
-      count += task.reflections?.length || 0;
-      task.children?.forEach(countTaskReflections);
+    // Count task notes recursively
+    const countTaskNotes = (task: Task): void => {
+      count += task.notes?.length || 0;
+      task.children?.forEach(countTaskNotes);
     };
-    tasks.forEach(countTaskReflections);
+    tasks.forEach(countTaskNotes);
     return count;
   };
 
@@ -40,7 +40,7 @@ export function ChatPanel({ isOpen, onClose, habits, tasks, currentHour, onActio
     {
       id: '1',
       role: 'assistant',
-      text: `I can see your ${habits.length} habits and ${tasks.length} projects, and ${countReflections()} reflections. How can I help?`,
+      text: `I can see your ${habits.length} habits and ${tasks.length} projects, and ${countNotes()} notes. How can I help?`,
     },
   ]);
   const [input, setInput] = useState('');
@@ -57,7 +57,7 @@ export function ChatPanel({ isOpen, onClose, habits, tasks, currentHour, onActio
         return [
           {
             ...prev[0],
-            text: `I can see your ${habits.length} habits and ${tasks.length} projects, and ${countReflections()} reflections. How can I help?`,
+            text: `I can see your ${habits.length} habits and ${tasks.length} projects, and ${countNotes()} notes. How can I help?`,
           },
           ...prev.slice(1),
         ];
@@ -337,6 +337,26 @@ function parseActionsFromResponse(text: string, habits: Habit[], tasks: Task[]):
           text: actionData.text,
           label: actionData.label || `Add "${actionData.text}"`,
         });
+      } else if (actionData.type === 'complete_task' && actionData.taskText) {
+        const taskId = findTaskIdByText(tasks, actionData.taskText);
+        if (taskId) {
+          actions.push({
+            type: 'complete_task',
+            taskId,
+            taskText: actionData.taskText,
+            label: actionData.label || `Check off "${actionData.taskText}"`,
+          });
+        }
+      } else if (actionData.type === 'uncomplete_task' && actionData.taskText) {
+        const taskId = findTaskIdByText(tasks, actionData.taskText);
+        if (taskId) {
+          actions.push({
+            type: 'uncomplete_task',
+            taskId,
+            taskText: actionData.taskText,
+            label: actionData.label || `Uncheck "${actionData.taskText}"`,
+          });
+        }
       } else if (actionData.type === 'delete_task' && actionData.taskText) {
         const taskId = findTaskIdByText(tasks, actionData.taskText);
         if (taskId) {
@@ -381,6 +401,40 @@ function parseActionsFromResponse(text: string, habits: Habit[], tasks: Task[]):
             newParentId,
             newParentText: actionData.newParentText,
             label: actionData.label || `Move "${actionData.taskText}"`,
+          });
+        }
+      } else if (actionData.type === 'add_note' && actionData.taskText && actionData.noteText) {
+        const taskId = findTaskIdByText(tasks, actionData.taskText);
+        if (taskId) {
+          actions.push({
+            type: 'add_note',
+            taskId,
+            taskText: actionData.taskText,
+            noteText: actionData.noteText,
+            label: actionData.label || `Add note to "${actionData.taskText}"`,
+          });
+        }
+      } else if (actionData.type === 'edit_note' && actionData.taskText && actionData.noteText && actionData.newNoteText) {
+        const taskId = findTaskIdByText(tasks, actionData.taskText);
+        if (taskId) {
+          actions.push({
+            type: 'edit_note',
+            taskId,
+            taskText: actionData.taskText,
+            noteText: actionData.noteText,
+            newNoteText: actionData.newNoteText,
+            label: actionData.label || `Edit note on "${actionData.taskText}"`,
+          });
+        }
+      } else if (actionData.type === 'delete_note' && actionData.taskText && actionData.noteText) {
+        const taskId = findTaskIdByText(tasks, actionData.taskText);
+        if (taskId) {
+          actions.push({
+            type: 'delete_note',
+            taskId,
+            taskText: actionData.taskText,
+            noteText: actionData.noteText,
+            label: actionData.label || `Delete note from "${actionData.taskText}"`,
           });
         }
       }

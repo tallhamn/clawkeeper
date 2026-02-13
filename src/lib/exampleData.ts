@@ -11,7 +11,7 @@ export const EXAMPLE_HABITS: Habit[] = [
     totalCompletions: 0,
     lastCompleted: null,
     repeatIntervalHours: 4,
-    reflections: [],
+    notes: [],
   },
   {
     id: generateId(),
@@ -19,7 +19,7 @@ export const EXAMPLE_HABITS: Habit[] = [
     totalCompletions: 0,
     lastCompleted: null,
     repeatIntervalHours: 2,
-    reflections: [],
+    notes: [],
   },
   {
     id: generateId(),
@@ -27,7 +27,7 @@ export const EXAMPLE_HABITS: Habit[] = [
     totalCompletions: 0,
     lastCompleted: null,
     repeatIntervalHours: 24,
-    reflections: [],
+    notes: [],
   },
   {
     id: generateId(),
@@ -35,7 +35,7 @@ export const EXAMPLE_HABITS: Habit[] = [
     totalCompletions: 0,
     lastCompleted: null,
     repeatIntervalHours: 8,
-    reflections: [],
+    notes: [],
   },
 ];
 
@@ -48,16 +48,14 @@ export const EXAMPLE_TASKS: Task[] = [
     text: 'Hire VP of Sales',
     completed: false,
     completedAt: null,
-    reflections: [],
+    notes: [],
     children: [
       {
         id: generateId(),
         text: 'Define role requirements and comp range',
         completed: true,
         completedAt: '2025-01-05',
-        reflections: [
-          'Took longer than expected - should have talked to other founders first to benchmark comp',
-        ],
+        notes: [{ text: 'Took longer than expected - should have talked to other founders first to benchmark comp', createdAt: '2025-01-05T12:00:00Z' }],
         children: [],
       },
       {
@@ -65,7 +63,7 @@ export const EXAMPLE_TASKS: Task[] = [
         text: 'Reach out to network for referrals',
         completed: false,
         completedAt: null,
-        reflections: [],
+        notes: [],
         children: [],
       },
       {
@@ -73,7 +71,7 @@ export const EXAMPLE_TASKS: Task[] = [
         text: 'Contact 3 executive recruiters',
         completed: false,
         completedAt: null,
-        reflections: [],
+        notes: [],
         children: [],
       },
     ],
@@ -83,14 +81,14 @@ export const EXAMPLE_TASKS: Task[] = [
     text: 'Guest house network infrastructure',
     completed: false,
     completedAt: null,
-    reflections: [],
+    notes: [],
     children: [
       {
         id: generateId(),
         text: 'Order Cat6A burial cable',
         completed: true,
         completedAt: '2025-01-03',
-        reflections: ['Monoprice was way cheaper than Amazon, saved $80'],
+        notes: [{ text: 'Monoprice was way cheaper than Amazon, saved $80', createdAt: '2025-01-03T12:00:00Z' }],
         children: [],
       },
       {
@@ -98,7 +96,7 @@ export const EXAMPLE_TASKS: Task[] = [
         text: 'Rent trencher for cable run',
         completed: false,
         completedAt: null,
-        reflections: [],
+        notes: [],
         children: [],
       },
       {
@@ -106,7 +104,7 @@ export const EXAMPLE_TASKS: Task[] = [
         text: 'Install network rack in utility closet',
         completed: false,
         completedAt: null,
-        reflections: [],
+        notes: [],
         children: [],
       },
     ],
@@ -116,7 +114,7 @@ export const EXAMPLE_TASKS: Task[] = [
     text: 'Research sparkling wine selections',
     completed: false,
     completedAt: null,
-    reflections: [],
+    notes: [],
     children: [],
   },
   {
@@ -124,9 +122,7 @@ export const EXAMPLE_TASKS: Task[] = [
     text: 'Fix garage door opener',
     completed: true,
     completedAt: '2025-01-02',
-    reflections: [
-      'YouTube tutorial made this easy - 20 min fix, didnt need to call repair guy',
-    ],
+    notes: [{ text: 'YouTube tutorial made this easy - 20 min fix, didnt need to call repair guy', createdAt: '2025-01-02T12:00:00Z' }],
     children: [],
   },
   {
@@ -134,7 +130,7 @@ export const EXAMPLE_TASKS: Task[] = [
     text: 'Schedule annual HVAC maintenance',
     completed: true,
     completedAt: '2024-12-28',
-    reflections: [],
+    notes: [],
     children: [],
   },
   {
@@ -142,9 +138,7 @@ export const EXAMPLE_TASKS: Task[] = [
     text: 'Review Q4 investment portfolio',
     completed: true,
     completedAt: '2024-12-20',
-    reflections: [
-      'Spent too long on this - next time just rebalance to target allocations, dont overthink',
-    ],
+    notes: [{ text: 'Spent too long on this - next time just rebalance to target allocations, dont overthink', createdAt: '2024-12-20T12:00:00Z' }],
     children: [],
   },
 ];

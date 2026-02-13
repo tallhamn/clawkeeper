@@ -29,7 +29,7 @@ describe('App - moveTask functionality', () => {
             text: 'Parent Task',
             completed: false,
             completedAt: null,
-            reflections: [],
+            notes: [],
             children: [],
           },
           {
@@ -37,7 +37,7 @@ describe('App - moveTask functionality', () => {
             text: 'Task to Move',
             completed: false,
             completedAt: null,
-            reflections: [],
+            notes: [],
             children: [],
           },
         ],
@@ -69,14 +69,14 @@ describe('App - moveTask functionality', () => {
             text: 'Parent Task',
             completed: false,
             completedAt: null,
-            reflections: [],
+            notes: [],
             children: [
               {
                 id: 'child1',
                 text: 'Child Task',
                 completed: false,
                 completedAt: null,
-                reflections: [],
+                notes: [],
                 children: [],
               },
             ],
@@ -103,14 +103,14 @@ describe('App - moveTask functionality', () => {
             text: 'Parent Task 1',
             completed: false,
             completedAt: null,
-            reflections: [],
+            notes: [],
             children: [
               {
                 id: 'child1',
                 text: 'Child Task',
                 completed: false,
                 completedAt: null,
-                reflections: [],
+                notes: [],
                 children: [],
               },
             ],
@@ -120,7 +120,7 @@ describe('App - moveTask functionality', () => {
             text: 'Parent Task 2',
             completed: false,
             completedAt: null,
-            reflections: [],
+            notes: [],
             children: [],
           },
         ],
@@ -145,7 +145,7 @@ describe('App - moveTask functionality', () => {
             text: 'Parent Task',
             completed: false,
             completedAt: null,
-            reflections: [],
+            notes: [],
             children: [],
           },
           {
@@ -153,14 +153,14 @@ describe('App - moveTask functionality', () => {
             text: 'Task with Children',
             completed: false,
             completedAt: null,
-            reflections: [],
+            notes: [],
             children: [
               {
                 id: 'grandchild1',
                 text: 'Grandchild Task',
                 completed: false,
                 completedAt: null,
-                reflections: [],
+                notes: [],
                 children: [],
               },
             ],
@@ -189,7 +189,7 @@ describe('App - moveTask functionality', () => {
             text: 'Task 1',
             completed: false,
             completedAt: null,
-            reflections: [],
+            notes: [],
             children: [],
           },
         ],
@@ -219,7 +219,7 @@ describe('App - moveTask functionality', () => {
             text: 'Task 1',
             completed: false,
             completedAt: null,
-            reflections: [],
+            notes: [],
             children: [],
           },
         ],
@@ -243,15 +243,18 @@ describe('App - moveTask functionality', () => {
             text: 'Active Parent Task',
             completed: false,
             completedAt: null,
-            reflections: [],
+            notes: [],
             children: [],
           },
           {
             id: 'task2',
-            text: 'Task with Reflections',
+            text: 'Task with Notes',
             completed: false,
             completedAt: null,
-            reflections: ['Great work!', 'Made good progress'],
+            notes: [
+              { text: 'Great work!', createdAt: '2026-02-12T10:00:00Z' },
+              { text: 'Made good progress', createdAt: '2026-02-12T11:00:00Z' },
+            ],
             children: [],
           },
         ],
@@ -263,10 +266,10 @@ describe('App - moveTask functionality', () => {
 
       await waitFor(() => {
         expect(container.textContent).toContain('Active Parent Task');
-        expect(container.textContent).toContain('Task with Reflections');
+        expect(container.textContent).toContain('Task with Notes');
       });
 
-      // Verify tasks with reflections maintain their data
+      // Verify tasks with notes maintain their data
       await waitFor(() => {
         const saveCalls = vi.mocked(storage.saveCurrentState).mock.calls;
         expect(saveCalls.length).toBeGreaterThan(0);
@@ -284,21 +287,21 @@ describe('App - moveTask functionality', () => {
             text: 'Root Task',
             completed: false,
             completedAt: null,
-            reflections: [],
+            notes: [],
             children: [
               {
                 id: 'child1',
                 text: 'Child Task',
                 completed: false,
                 completedAt: null,
-                reflections: [],
+                notes: [],
                 children: [
                   {
                     id: 'grandchild1',
                     text: 'Grandchild Task',
                     completed: false,
                     completedAt: null,
-                    reflections: [],
+                    notes: [],
                     children: [],
                   },
                 ],
@@ -326,7 +329,7 @@ describe('App - moveTask functionality', () => {
             text: 'Parent 1',
             completed: false,
             completedAt: null,
-            reflections: [],
+            notes: [],
             children: [],
           },
           {
@@ -334,21 +337,21 @@ describe('App - moveTask functionality', () => {
             text: 'Task with Nested Children',
             completed: false,
             completedAt: null,
-            reflections: [],
+            notes: [],
             children: [
               {
                 id: 'child1',
                 text: 'Child',
                 completed: false,
                 completedAt: null,
-                reflections: [],
+                notes: [],
                 children: [
                   {
                     id: 'grandchild1',
                     text: 'Grandchild',
                     completed: false,
                     completedAt: null,
-                    reflections: [],
+                    notes: [],
                     children: [],
                   },
                 ],
@@ -379,14 +382,14 @@ describe('App - moveTask functionality', () => {
             text: 'Task 1',
             completed: false,
             completedAt: null,
-            reflections: [],
+            notes: [],
             children: [
               {
                 id: 'task1-child1',
                 text: 'Subtask 1',
                 completed: false,
                 completedAt: null,
-                reflections: [],
+                notes: [],
                 children: [],
               },
             ],
@@ -396,7 +399,7 @@ describe('App - moveTask functionality', () => {
             text: 'Task 2',
             completed: false,
             completedAt: null,
-            reflections: [],
+            notes: [],
             children: [],
           },
         ],
@@ -436,7 +439,7 @@ describe('App - Habit wakeup functionality', () => {
           totalCompletions: 5,
           lastCompleted: new Date().toISOString(), // Recently completed (in standby)
           repeatIntervalHours: 24,
-          reflections: [],
+          notes: [],
         },
       ],
       tasks: [],
@@ -480,7 +483,7 @@ describe('App - Habit wakeup functionality', () => {
       totalCompletions: 3,
       lastCompleted: oneHourAgo.toISOString(),
       repeatIntervalHours: 24,
-      reflections: [],
+      notes: [],
     };
 
     // After wakeup, lastCompleted should be set to 24 hours ago, making it due
@@ -493,5 +496,124 @@ describe('App - Habit wakeup functionality', () => {
 
     // Habit should be due after wakeup
     expect(timeSinceLastCompleted).toBeGreaterThanOrEqual(intervalMs);
+  });
+});
+
+describe('Note matching for LLM edit/delete', () => {
+  // This tests the noteMatches logic used by editTaskNote and deleteTaskNote.
+  // The LLM sees notes displayed as "note text" in the system prompt context,
+  // so it may wrap the noteText in quotes or use different casing.
+  const normalizeNoteText = (text: string) => text.replace(/^["']|["']$/g, '').trim();
+  const noteMatches = (noteText: string, searchText: string): boolean => {
+    const a = normalizeNoteText(noteText);
+    const b = normalizeNoteText(searchText);
+    return a === b || a.toLowerCase() === b.toLowerCase();
+  };
+
+  it('should match exact note text', () => {
+    expect(noteMatches('Rate limit is 100 req/min', 'Rate limit is 100 req/min')).toBe(true);
+  });
+
+  it('should match note text wrapped in double quotes', () => {
+    expect(noteMatches('Rate limit is 100 req/min', '"Rate limit is 100 req/min"')).toBe(true);
+  });
+
+  it('should match note text wrapped in single quotes', () => {
+    expect(noteMatches('Rate limit is 100 req/min', "'Rate limit is 100 req/min'")).toBe(true);
+  });
+
+  it('should match note text with different casing', () => {
+    expect(noteMatches('Rate limit is 100 req/min', 'rate limit is 100 req/min')).toBe(true);
+  });
+
+  it('should match note text with extra whitespace', () => {
+    expect(noteMatches('Rate limit is 100 req/min', '  Rate limit is 100 req/min  ')).toBe(true);
+  });
+
+  it('should not match completely different text', () => {
+    expect(noteMatches('Rate limit is 100 req/min', 'Something else entirely')).toBe(false);
+  });
+
+  it('should build context with all notes, not just the last 3', () => {
+    // This tests that the flattenTasks logic in claude.ts shows ALL notes
+    // Previously it used .slice(-3) which hid older notes from the LLM
+    const flattenTasks = (tasks: Task[], depth = 0): string[] => {
+      let result: string[] = [];
+      for (const task of tasks) {
+        const indent = '  '.repeat(depth);
+        const status = task.completed ? '✓' : '○';
+        result.push(`${indent}${status} ${task.text}`);
+        if (task.notes && task.notes.length > 0) {
+          task.notes.forEach(n => {
+            result.push(`${indent}  📝 "${n.text}"`);
+          });
+        }
+        if (task.children && task.children.length > 0) {
+          result = result.concat(flattenTasks(task.children, depth + 1));
+        }
+      }
+      return result;
+    };
+
+    const tasks: Task[] = [
+      {
+        id: 't1',
+        text: 'Research compensation',
+        completed: false,
+        completedAt: null,
+        notes: [
+          { text: 'Apple: $280k', createdAt: '2026-02-10T10:00:00Z' },
+          { text: 'Anduril: $300k', createdAt: '2026-02-10T11:00:00Z' },
+          { text: 'Anthropic: $320k', createdAt: '2026-02-10T12:00:00Z' },
+          { text: 'Spire: $250k', createdAt: '2026-02-10T13:00:00Z' },
+          { text: 'Google: $310k', createdAt: '2026-02-10T14:00:00Z' },
+        ],
+        children: [],
+      },
+    ];
+
+    const output = flattenTasks(tasks).join('\n');
+
+    // All 5 notes should be present, not just the last 3
+    expect(output).toContain('Apple: $280k');
+    expect(output).toContain('Anduril: $300k');
+    expect(output).toContain('Anthropic: $320k');
+    expect(output).toContain('Spire: $250k');
+    expect(output).toContain('Google: $310k');
+  });
+
+  it('should edit note via LLM action when noteText has wrapping quotes', async () => {
+    const initialState: AppState = {
+      habits: [],
+      tasks: [
+        {
+          id: 'task1',
+          text: 'Research API',
+          completed: false,
+          completedAt: null,
+          notes: [
+            { text: 'Rate limit is 100 req/min', createdAt: '2026-02-12T10:00:00Z' },
+          ],
+          children: [],
+        },
+      ],
+    };
+
+    vi.mocked(storage.loadCurrentState).mockResolvedValue(initialState);
+
+    const { container } = render(<App />);
+
+    await waitFor(() => {
+      expect(container.textContent).toContain('Research API');
+    });
+
+    // Verify the task was loaded with the note
+    await waitFor(() => {
+      const saveCalls = vi.mocked(storage.saveCurrentState).mock.calls;
+      expect(saveCalls.length).toBeGreaterThan(0);
+      const savedState = saveCalls[0][0] as AppState;
+      expect(savedState.tasks[0].notes).toHaveLength(1);
+      expect(savedState.tasks[0].notes[0].text).toBe('Rate limit is 100 req/min');
+    });
   });
 });
