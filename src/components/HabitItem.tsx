@@ -539,7 +539,7 @@ export function HabitItem({
             <div className="space-y-2 mb-3">
               {habit.notes.map((note, i) => (
                 <div key={i} className="text-sm text-stone-600 bg-white px-3 py-2 rounded border-l-2 border-stone-300">
-                  <div>{note.text}</div>
+                  <div className="whitespace-pre-wrap">{note.text}</div>
                   {note.createdAt && (
                     <div className="text-xs text-stone-400 mt-1">
                       {new Date(note.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}

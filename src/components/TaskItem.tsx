@@ -399,7 +399,7 @@ export function TaskItem({
                         </div>
                       </div>
                     ) : (
-                      <span>{note.text}</span>
+                      <span className="whitespace-pre-wrap">{note.text}</span>
                     )}
                   </div>
                 ))}
