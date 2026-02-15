@@ -1,6 +1,6 @@
 # ClawKeeper
 
-CLI and Desktop App for agentic task management. Collaborate with Claude or OpenClaw on your tasks and habits.
+Your claw can't cook dinner — but it can plan the menu, find the recipe, and make the grocery list. ClawKeeper keeps your tasks and habits where your claw can reach them, so it can know where to help.
 
 All data is stored as human-readable markdown in `~/.clawkeeper/current.md`.
 

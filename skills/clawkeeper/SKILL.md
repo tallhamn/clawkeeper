@@ -1,6 +1,6 @@
 ---
 name: clawkeeper
-description: Use when the user wants to manage their tasks, habits, or todos. Handles adding, completing, editing, deleting tasks and habits, managing subtasks and notes, and showing current state.
+description: Manage the user's tasks and habits — the human-side work that the claw can't do but can help with. Handles adding, completing, editing, deleting tasks and habits, managing subtasks and notes, and showing current state.
 metadata: {"openclaw": {"requires": {"bins": ["clawkeeper"], "env": ["CLAWKEEPER_DIR"]}, "primaryEnv": "CLAWKEEPER_DIR", "install": [{"id": "npm", "kind": "node", "package": "clawkeeper", "bins": ["clawkeeper"], "label": "Install via npm"}]}}
 ---
 

@@ -1,7 +1,7 @@
 {
   "name": "clawkeeper",
   "version": "0.1.0",
-  "description": "Agentic task and habit management with markdown storage",
+  "description": "Tasks and habits for human-claw collaboration. Your claw can't cook dinner, but it can plan the menu.",
   "type": "module",
   "bin": {
     "clawkeeper": "./bin/clawkeeper"
