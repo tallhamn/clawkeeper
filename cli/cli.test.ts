@@ -86,7 +86,7 @@ describe('CLI integration', () => {
       const complete = cli(['task', 'complete', '--text', 'Test task'], tempHome);
       expect(complete.ok).toBe(true);
 
-      const list2 = cli(['task', 'list'], tempHome);
+      const list2 = cli(['task', 'list', '--all'], tempHome);
       expect(list2.data[0].completed).toBe(true);
 
       const uncomplete = cli(['task', 'uncomplete', '--text', 'Test task'], tempHome);
@@ -102,7 +102,7 @@ describe('CLI integration', () => {
       const complete = cli(['task', 'complete', '--text', 'unique task'], tempHome);
       expect(complete.ok).toBe(true);
 
-      const list = cli(['task', 'list'], tempHome);
+      const list = cli(['task', 'list', '--all'], tempHome);
       expect(list.data[0].completed).toBe(true);
     });
 
@@ -253,7 +253,7 @@ describe('CLI integration', () => {
       const complete = cli(['task', 'complete', '--id', taskId], tempHome);
       expect(complete.ok).toBe(true);
 
-      const list = cli(['task', 'list'], tempHome);
+      const list = cli(['task', 'list', '--all'], tempHome);
       expect(list.data[0].completed).toBe(true);
     });
 

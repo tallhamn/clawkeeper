@@ -89,7 +89,7 @@ function run() {
 
       switch (command) {
         case 'list':
-          result = listTasks(state);
+          result = listTasks(state, flags.all === true);
           break;
 
         case 'add': {

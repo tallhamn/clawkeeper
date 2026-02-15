@@ -67,8 +67,14 @@ function resolveTask(state: AppState, id?: string, text?: string): Task {
 
 // ── Task operations ──
 
-export function listTasks(state: AppState): Task[] {
-  return state.tasks;
+function filterIncomplete(tasks: Task[]): Task[] {
+  return tasks
+    .filter(t => !t.completed)
+    .map(t => ({ ...t, children: filterIncomplete(t.children || []) }));
+}
+
+export function listTasks(state: AppState, all = false): Task[] {
+  return all ? state.tasks : filterIncomplete(state.tasks);
 }
 
 export function addTask(state: AppState, text: string): { state: AppState; task: Task } {
