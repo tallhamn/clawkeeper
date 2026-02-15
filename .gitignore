@@ -24,7 +24,7 @@ dist-ssr
 *.sw?
 
 # Tauri
-src-tauri/target
+**/src-tauri/target
 
 # User data
 .clawkeeper/

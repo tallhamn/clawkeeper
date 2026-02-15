@@ -1,60 +1,16 @@
 {
-  "name": "clawkeeper",
-  "version": "0.1.0",
-  "description": "Agentic task and habit management with markdown storage",
-  "type": "module",
-  "bin": {
-    "clawkeeper": "./bin/clawkeeper"
-  },
+  "name": "clawkeeper-monorepo",
+  "private": true,
+  "workspaces": ["packages/*"],
   "openclaw": {
     "extensions": ["./openclaw.plugin.json"]
   },
-  "keywords": [
-    "openclaw",
-    "tasks",
-    "habits",
-    "productivity",
-    "cli"
-  ],
   "scripts": {
-    "dev": "vite",
-    "build": "tsc && vite build",
-    "preview": "vite preview",
-    "test": "vitest",
-    "test:ui": "vitest --ui",
-    "test:run": "vitest run",
-    "tauri": "tauri",
-    "tauri:dev": "tauri dev",
-    "tauri:build": "tauri build",
-    "cli": "npx tsx cli/main.ts",
-    "test:cli": "vitest run --config cli/vitest.config.ts"
-  },
-  "dependencies": {
-    "@anthropic-ai/sdk": "^0.32.1",
-    "@tauri-apps/api": "^2.2.0",
-    "@tauri-apps/plugin-dialog": "^2.0.0",
-    "@tauri-apps/plugin-fs": "^2.0.0",
-    "@tauri-apps/plugin-http": "^2.5.5",
-    "@tauri-apps/plugin-shell": "^2.0.0",
-    "react": "^18.3.1",
-    "react-dom": "^18.3.1"
-  },
-  "devDependencies": {
-    "@tauri-apps/cli": "^2.2.0",
-    "@testing-library/jest-dom": "^6.9.1",
-    "@testing-library/react": "^16.3.1",
-    "@testing-library/user-event": "^14.6.1",
-    "@types/react": "^18.3.12",
-    "@types/react-dom": "^18.3.1",
-    "@vitejs/plugin-react": "^4.3.4",
-    "@vitest/ui": "^4.0.16",
-    "autoprefixer": "^10.4.20",
-    "jsdom": "^27.4.0",
-    "postcss": "^8.4.49",
-    "tailwindcss": "^3.4.17",
-    "tsx": "^4.21.0",
-    "typescript": "^5.7.2",
-    "vite": "^6.0.5",
-    "vitest": "^4.0.16"
+    "test": "npm run test:run --workspaces --if-present",
+    "test:run": "npm run test:run --workspaces --if-present",
+    "dev": "npm run dev -w @clawkeeper/desktop",
+    "tauri:dev": "npm run tauri:dev -w @clawkeeper/desktop",
+    "tauri:build": "npm run tauri:build -w @clawkeeper/desktop",
+    "cli": "npm run cli -w clawkeeper"
   }
 }

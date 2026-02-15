@@ -1,0 +1,16 @@
+{
+  "name": "@clawkeeper/shared",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./src/*": "./src/*"
+  },
+  "scripts": {
+    "test": "vitest",
+    "test:run": "vitest run"
+  },
+  "devDependencies": {
+    "vitest": "^4.0.16"
+  }
+}
