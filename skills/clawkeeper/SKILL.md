@@ -1,13 +1,12 @@
 ---
 name: clawkeeper
 description: Use when the user wants to manage their tasks, habits, or todos. Handles adding, completing, editing, deleting tasks and habits, managing subtasks and notes, and showing current state.
+metadata: {"openclaw": {"requires": {"bins": ["clawkeeper"], "env": ["CLAWKEEPER_DIR"]}, "primaryEnv": "CLAWKEEPER_DIR", "install": [{"id": "npm", "kind": "node", "package": "clawkeeper", "bins": ["clawkeeper"], "label": "Install via npm"}]}}
 ---
 
 # ClawKeeper CLI
 
 Manage the user's tasks and habits via the ClawKeeper CLI. All data is stored as markdown at the path set by `CLAWKEEPER_DIR` (defaults to `~/.clawkeeper/`).
-
-Run commands using:
 
 ```bash
 clawkeeper <entity> <command> [--flags]
@@ -46,6 +45,17 @@ clawkeeper habit add-note --text "Meditate" --note "Felt calm today"
 ```bash
 clawkeeper state show
 ```
+
+## Proactive Checks (Heartbeat)
+
+When running periodic checks, use `clawkeeper state show` to review the user's habits and tasks:
+
+- **Missed habits**: If a habit hasn't been completed for more than 2x its interval, ask about it gently. People forget — a nudge helps more than a lecture.
+- **Building streaks**: When a habit's completion count is climbing, acknowledge the momentum briefly.
+- **Recent notes**: If the user added reflections or notes recently, reference them for continuity. It shows you're paying attention.
+- **Stale tasks**: Tasks sitting open for a long time might need to be broken down, re-prioritized, or dropped.
+
+Tone: supportive collaborator, not drill sergeant. If nothing needs attention, reply `HEARTBEAT_OK`.
 
 ## Notes
 

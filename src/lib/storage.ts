@@ -198,6 +198,7 @@ export async function saveCurrentState(state: AppState): Promise<void> {
 
     // Save as Markdown
     const markdown = serializeToMarkdown(filteredState.habits, filteredState.tasks);
+    lastWrittenMarkdown = markdown;
     await writeTextFile(`${appDir}/${CURRENT_MD_FILE}`, markdown);
   } catch (error) {
     console.error('Error saving current state:', error);
@@ -205,25 +206,47 @@ export async function saveCurrentState(state: AppState): Promise<void> {
   }
 }
 
+/** Tracks the last markdown string this app wrote, so the watcher can ignore self-triggered changes. */
+let lastWrittenMarkdown: string | null = null;
+
 /**
- * Load current state from Markdown file
+ * Watch current.md for external changes and invoke callback with new state.
+ * Compares raw file content against what we last saved to skip self-triggered reloads.
+ */
+export async function watchCurrentFile(
+  onChange: (state: AppState) => void
+): Promise<() => void> {
+  const home = await homeDir();
+  const mdPath = `${home}${APP_DIR_NAME}/${CURRENT_MD_FILE}`;
+  // Poll the file instead of using watch — inotify doesn't work through symlinks
+  const intervalId = setInterval(async () => {
+    try {
+      const raw = await readTextFile(mdPath);
+      if (raw === lastWrittenMarkdown) return;
+      lastWrittenMarkdown = raw;
+      const state = parseMarkdown(raw);
+      onChange(state);
+    } catch (e) {
+      console.error('[Watcher] Error reading file:', e);
+    }
+  }, 2000);
+  return () => clearInterval(intervalId);
+}
+
+/**
+ * Load current state from Markdown file.
+ * Tries to read directly without checking exists() first,
+ * since exists() can silently fail in Tauri's fs scope.
  */
 export async function loadCurrentState(): Promise<AppState | null> {
   const home = await homeDir();
-  const appDir = `${home}${APP_DIR_NAME}`;
-
+  const mdPath = `${home}${APP_DIR_NAME}/${CURRENT_MD_FILE}`;
   try {
-    const mdPath = `${appDir}/${CURRENT_MD_FILE}`;
-    const mdExists = await exists(mdPath);
-
-    if (mdExists) {
-      const markdown = await readTextFile(mdPath);
-      return parseMarkdown(markdown);
-    }
-
-    return null;
+    const markdown = await readTextFile(mdPath);
+    lastWrittenMarkdown = markdown; // seed so poller doesn't re-trigger on same content
+    return parseMarkdown(markdown);
   } catch (error) {
-    console.error('Error loading current state:', error);
+    console.log('[Storage] Could not read current.md (may not exist yet):', error);
     return null;
   }
 }

@@ -229,21 +229,21 @@ export function HabitItem({
 
   return (
     <div className="group py-2">
-      <div className="flex items-center gap-3">
+      <div className="flex items-start gap-2.5">
         {!editMode && (
           <>
             {/* Due state: Show checkbox (identical to tasks) */}
             {isDue && !showCompletionAnimation && !showTransitionToPower && (
               <button
                 onClick={handleComplete}
-                className="w-5 h-5 rounded border-2 border-tokyo-blue/40 hover:border-tokyo-blue flex items-center justify-center transition-all flex-shrink-0"
+                className="mt-0.5 w-5 h-5 rounded border-2 border-tokyo-blue/40 hover:border-tokyo-blue flex items-center justify-center transition-all flex-shrink-0"
               >
               </button>
             )}
 
             {/* Completion animation: Checkbox with checkmark (identical to task) */}
             {showCompletionAnimation && (
-              <div className="w-5 h-5 rounded border-2 border-tokyo-green bg-tokyo-green flex items-center justify-center transition-all flex-shrink-0">
+              <div className="mt-0.5 w-5 h-5 rounded border-2 border-tokyo-green bg-tokyo-green flex items-center justify-center transition-all flex-shrink-0">
                 <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                 </svg>
@@ -252,8 +252,8 @@ export function HabitItem({
 
             {/* Transition animation: Morph to power symbol */}
             {showTransitionToPower && (
-              <div className="w-5 h-5 flex items-center justify-center transition-all duration-1000 flex-shrink-0 animate-pulse">
-                <span className="text-lg text-tokyo-magenta">⏻</span>
+              <div className="mt-0.5 w-5 h-5 flex items-center justify-center transition-all duration-1000 flex-shrink-0 animate-pulse">
+                <span className="text-base leading-none text-tokyo-magenta">⏻</span>
               </div>
             )}
 
@@ -267,10 +267,10 @@ export function HabitItem({
                     setCountdown(formatCountdown(habit.lastCompleted, habit.repeatIntervalHours));
                   }}
                   onMouseLeave={() => setShowCountdown(false)}
-                  className="w-5 h-5 flex items-center justify-center hover:opacity-100 transition-opacity cursor-pointer"
+                  className="mt-0.5 w-5 h-5 flex items-center justify-center hover:opacity-100 transition-opacity cursor-pointer"
                   style={{ opacity: 0.7 }}
                 >
-                  <span className="text-lg">⏻</span>
+                  <span className="text-base leading-none">⏻</span>
                 </button>
                 {showCountdown && (
                   <div className="absolute left-7 top-0 bg-tokyo-surface text-tokyo-text text-xs px-2 py-1 rounded whitespace-nowrap z-10">

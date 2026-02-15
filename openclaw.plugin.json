@@ -1,0 +1,23 @@
+{
+  "id": "clawkeeper",
+  "name": "ClawKeeper",
+  "description": "Agentic task and habit management with markdown storage",
+  "version": "0.1.0",
+  "skills": ["./skills/clawkeeper"],
+  "configSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {
+      "dataDir": {
+        "type": "string",
+        "description": "Path to ClawKeeper data directory (sets CLAWKEEPER_DIR)"
+      }
+    }
+  },
+  "uiHints": {
+    "dataDir": {
+      "label": "Data directory",
+      "placeholder": "~/.clawkeeper"
+    }
+  }
+}

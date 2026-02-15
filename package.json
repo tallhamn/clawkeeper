@@ -1,8 +1,21 @@
 {
   "name": "clawkeeper",
-  "private": true,
   "version": "0.1.0",
+  "description": "Agentic task and habit management with markdown storage",
   "type": "module",
+  "bin": {
+    "clawkeeper": "./bin/clawkeeper"
+  },
+  "openclaw": {
+    "extensions": ["./openclaw.plugin.json"]
+  },
+  "keywords": [
+    "openclaw",
+    "tasks",
+    "habits",
+    "productivity",
+    "cli"
+  ],
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",

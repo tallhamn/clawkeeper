@@ -4,14 +4,29 @@ import App from './App';
 import * as storage from './lib/storage';
 import type { AppState, Task } from './lib/types';
 
+// Capture the onChange callback passed to watchCurrentFile
+let watchOnChange: ((state: AppState) => void) | null = null;
+
+// Mock claude module (used by SetupPrompt)
+vi.mock('./lib/claude', () => ({
+  getActiveProvider: vi.fn().mockReturnValue('none'),
+  getProviderDisplayName: vi.fn().mockReturnValue('Claude'),
+  onProviderChange: vi.fn().mockReturnValue(() => {}),
+  providerReady: Promise.resolve(),
+  streamMessage: vi.fn(),
+}));
+
 // Mock storage module
 vi.mock('./lib/storage', () => ({
   initializeStorage: vi.fn().mockResolvedValue(undefined),
-  isInitialized: vi.fn().mockResolvedValue(true),
   loadCurrentState: vi.fn(),
   saveCurrentState: vi.fn().mockResolvedValue(undefined),
   archiveOldCompletedTasks: vi.fn((state) => Promise.resolve(state)),
   getDefaultState: vi.fn(() => ({ habits: [], tasks: [] })),
+  watchCurrentFile: vi.fn((onChange) => {
+    watchOnChange = onChange;
+    return Promise.resolve(() => { watchOnChange = null; });
+  }),
 }));
 
 describe('App - moveTask functionality', () => {
@@ -614,6 +629,210 @@ describe('Note matching for LLM edit/delete', () => {
       const savedState = saveCalls[0][0] as AppState;
       expect(savedState.tasks[0].notes).toHaveLength(1);
       expect(savedState.tasks[0].notes[0].text).toBe('Rate limit is 100 req/min');
+    });
+  });
+});
+
+describe('External file change detection (regression)', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    watchOnChange = null;
+  });
+
+  it('should update UI when an external process adds a task', async () => {
+    const initialState: AppState = {
+      habits: [],
+      tasks: [
+        {
+          id: 'task1',
+          text: 'Existing task',
+          completed: false,
+          completedAt: null,
+          notes: [],
+          children: [],
+        },
+      ],
+    };
+
+    vi.mocked(storage.loadCurrentState).mockResolvedValue(initialState);
+
+    const { container } = render(<App />);
+
+    await waitFor(() => {
+      expect(container.textContent).toContain('Existing task');
+    });
+
+    // watchCurrentFile should have been called and captured the onChange
+    expect(storage.watchCurrentFile).toHaveBeenCalled();
+    expect(watchOnChange).not.toBeNull();
+
+    // Simulate external file change (e.g., CLI adds a task)
+    const externalState: AppState = {
+      habits: [],
+      tasks: [
+        {
+          id: 'task1',
+          text: 'Existing task',
+          completed: false,
+          completedAt: null,
+          notes: [],
+          children: [],
+        },
+        {
+          id: 'task2',
+          text: 'Task from CLI',
+          completed: false,
+          completedAt: null,
+          notes: [],
+          children: [],
+        },
+      ],
+    };
+
+    watchOnChange!(externalState);
+
+    await waitFor(() => {
+      expect(container.textContent).toContain('Task from CLI');
+      expect(container.textContent).toContain('Existing task');
+    });
+  });
+
+  it('should update UI when an external process modifies habits', async () => {
+    const initialState: AppState = {
+      habits: [
+        {
+          id: 'h1',
+          text: 'Drink water',
+          repeatIntervalHours: 4,
+          lastCompleted: null,
+          totalCompletions: 0,
+          notes: [],
+        },
+      ],
+      tasks: [],
+    };
+
+    vi.mocked(storage.loadCurrentState).mockResolvedValue(initialState);
+
+    const { container } = render(<App />);
+
+    await waitFor(() => {
+      expect(container.textContent).toContain('Drink water');
+    });
+
+    // External process adds a habit
+    const externalState: AppState = {
+      habits: [
+        {
+          id: 'h1',
+          text: 'Drink water',
+          repeatIntervalHours: 4,
+          lastCompleted: null,
+          totalCompletions: 0,
+          notes: [],
+        },
+        {
+          id: 'h2',
+          text: 'Meditate',
+          repeatIntervalHours: 24,
+          lastCompleted: null,
+          totalCompletions: 0,
+          notes: [],
+        },
+      ],
+      tasks: [],
+    };
+
+    watchOnChange!(externalState);
+
+    await waitFor(() => {
+      expect(container.textContent).toContain('Meditate');
+      expect(container.textContent).toContain('Drink water');
+    });
+  });
+
+  it('should clean up watcher on unmount', async () => {
+    const initialState: AppState = {
+      habits: [],
+      tasks: [],
+    };
+
+    vi.mocked(storage.loadCurrentState).mockResolvedValue(initialState);
+    vi.mocked(storage.getDefaultState).mockReturnValue({
+      habits: [{ id: 'h1', text: 'Default habit', repeatIntervalHours: 24, lastCompleted: null, totalCompletions: 0, notes: [] }],
+      tasks: [],
+    });
+
+    const { unmount } = render(<App />);
+
+    await waitFor(() => {
+      expect(storage.watchCurrentFile).toHaveBeenCalled();
+    });
+
+    unmount();
+
+    // After unmount, the onChange callback should be cleared (unwatch called)
+    expect(watchOnChange).toBeNull();
+  });
+
+  it('should use defaults when loadCurrentState returns null (file missing)', async () => {
+    // This is the regression for silent exists() failures —
+    // the app should fall back to defaults, not crash
+    vi.mocked(storage.loadCurrentState).mockResolvedValue(null);
+    vi.mocked(storage.getDefaultState).mockReturnValue({
+      habits: [],
+      tasks: [
+        {
+          id: 'default1',
+          text: 'Default task',
+          completed: false,
+          completedAt: null,
+          notes: [],
+          children: [],
+        },
+      ],
+    });
+
+    const { container } = render(<App />);
+
+    await waitFor(() => {
+      expect(container.textContent).toContain('Default task');
+    });
+
+    // Should have saved the defaults to disk
+    await waitFor(() => {
+      expect(storage.saveCurrentState).toHaveBeenCalled();
+    });
+  });
+
+  it('should NOT overwrite an existing empty file with defaults', async () => {
+    // Regression: if user deletes all tasks/habits, the file is valid but empty.
+    // The app must NOT treat this as "first launch" and overwrite with defaults.
+    const emptyState: AppState = {
+      habits: [],
+      tasks: [],
+    };
+
+    vi.mocked(storage.loadCurrentState).mockResolvedValue(emptyState);
+    vi.mocked(storage.getDefaultState).mockReturnValue({
+      habits: [{ id: 'default-h', text: 'Default habit', repeatIntervalHours: 24, lastCompleted: null, totalCompletions: 0, notes: [] }],
+      tasks: [{ id: 'default-t', text: 'Default task', completed: false, completedAt: null, notes: [], children: [] }],
+    });
+
+    const { container } = render(<App />);
+
+    // Wait for initialization to complete
+    await waitFor(() => {
+      expect(storage.loadCurrentState).toHaveBeenCalled();
+    });
+
+    // getDefaultState should NOT have been called — the file existed
+    expect(storage.getDefaultState).not.toHaveBeenCalled();
+
+    // The defaults should NOT appear in the UI
+    await waitFor(() => {
+      expect(container.textContent).not.toContain('Default task');
+      expect(container.textContent).not.toContain('Default habit');
     });
   });
 });

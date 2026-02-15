@@ -6,6 +6,9 @@ import type { Habit, Task } from '@/lib/types';
 // Mock the claude module
 vi.mock('@/lib/claude', () => ({
   streamMessage: vi.fn(),
+  getActiveProvider: vi.fn().mockReturnValue('anthropic'),
+  getProviderDisplayName: vi.fn().mockReturnValue('Claude'),
+  onProviderChange: vi.fn().mockReturnValue(() => {}),
 }));
 
 describe('ChatPanel Component', () => {

@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
 import type { Habit, Task, LLMAction } from '@/lib/types';
 import { generateId } from '@/lib/utils';
-import { streamMessage } from '@/lib/claude';
+import { streamMessage, getActiveProvider, getProviderDisplayName, onProviderChange } from '@/lib/claude';
+import type { Provider } from '@/lib/claude';
 
 interface Message {
   id: string;
@@ -46,8 +47,12 @@ export function ChatPanel({ isOpen, onClose, habits, tasks, currentHour, onActio
   const [input, setInput] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   const [streamingText, setStreamingText] = useState('');
+  const [provider, setProvider] = useState<Provider>(getActiveProvider());
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  // Subscribe to provider changes
+  useEffect(() => onProviderChange(setProvider), []);
 
   // Update the initial message when habits or tasks change
   useEffect(() => {
@@ -158,7 +163,9 @@ export function ChatPanel({ isOpen, onClose, habits, tasks, currentHour, onActio
         <div className="px-4 py-3 border-b border-tokyo-border flex items-center justify-between bg-tokyo-surface">
           <div>
             <h3 className="text-xs font-semibold text-tokyo-text-muted uppercase tracking-wider">Planning</h3>
-            <p className="text-xs text-tokyo-text-dim mt-0.5">Powered by Claude</p>
+            <p className="text-xs text-tokyo-text-dim mt-0.5">
+              via {getProviderDisplayName()}
+            </p>
           </div>
           <button
             onClick={onClose}

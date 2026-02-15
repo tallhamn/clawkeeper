@@ -14,6 +14,13 @@ export default defineConfig({
   server: {
     port: 1420,
     strictPort: true,
+    proxy: {
+      '/openclaw': {
+        target: 'http://127.0.0.1:18789',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/openclaw/, ''),
+      },
+    },
   },
   // Tauri uses a unique identifier for the path
   envPrefix: ['VITE_', 'TAURI_'],

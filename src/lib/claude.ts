@@ -2,6 +2,14 @@ import Anthropic from '@anthropic-ai/sdk';
 import type { Habit, Task } from './types';
 import { loadRecentArchives } from './storage';
 import { performWebSearch } from './search';
+import {
+  checkOpenClawAvailable,
+  isOpenClawAvailable,
+  getOpenClawName,
+  sendViaOpenClaw,
+  streamViaOpenClaw,
+  resetOpenClawStatus,
+} from './openclaw';
 
 const apiKey = import.meta.env.VITE_ANTHROPIC_API_KEY;
 
@@ -10,6 +18,45 @@ if (!apiKey) {
 }
 
 const anthropic = apiKey ? new Anthropic({ apiKey, dangerouslyAllowBrowser: true }) : null;
+
+export type Provider = 'openclaw' | 'anthropic' | 'none';
+type ProviderListener = (provider: Provider) => void;
+const providerListeners = new Set<ProviderListener>();
+
+function resolveProvider(): Provider {
+  if (isOpenClawAvailable()) return 'openclaw';
+  if (anthropic) return 'anthropic';
+  return 'none';
+}
+
+function notifyProviderChange(): void {
+  const p = resolveProvider();
+  for (const fn of providerListeners) fn(p);
+}
+
+/** Probe OpenClaw on module load. */
+export const providerReady: Promise<void> = checkOpenClawAvailable().then(() => {
+  notifyProviderChange();
+});
+
+/** Returns which provider is active right now. */
+export function getActiveProvider(): Provider {
+  return resolveProvider();
+}
+
+/** Returns a display name for the active provider. */
+export function getProviderDisplayName(): string {
+  if (resolveProvider() === 'openclaw') {
+    return getOpenClawName() || 'OpenClaw';
+  }
+  return 'Claude';
+}
+
+/** Subscribe to provider changes. Returns an unsubscribe function. */
+export function onProviderChange(fn: ProviderListener): () => void {
+  providerListeners.add(fn);
+  return () => { providerListeners.delete(fn); };
+}
 
 /**
  * Tool definitions for Claude
@@ -184,11 +231,30 @@ export async function sendMessage(
   currentHour: number,
   conversationHistory: Array<{ role: 'user' | 'assistant'; content: string }>
 ): Promise<string> {
+  const systemPrompt = await generateSystemPrompt(habits, tasks, currentHour);
+
+  // Try OpenClaw first
+  if (isOpenClawAvailable()) {
+    try {
+      const ocMessages = [
+        ...conversationHistory.map((msg) => ({
+          role: msg.role,
+          content: msg.content,
+        })),
+        { role: 'user', content: userMessage },
+      ];
+      return await sendViaOpenClaw(systemPrompt, ocMessages);
+    } catch (error) {
+      console.warn('[Claude] OpenClaw failed, falling back to Anthropic:', error);
+      resetOpenClawStatus();
+      notifyProviderChange();
+    }
+  }
+
+  // Fallback to Anthropic
   if (!anthropic) {
     throw new Error('Claude API key not configured. Please add VITE_ANTHROPIC_API_KEY to your .env file.');
   }
-
-  const systemPrompt = await generateSystemPrompt(habits, tasks, currentHour);
 
   try {
     const messages: Anthropic.MessageParam[] = [
@@ -288,11 +354,31 @@ export async function* streamMessage(
   currentHour: number,
   conversationHistory: Array<{ role: 'user' | 'assistant'; content: string }>
 ): AsyncGenerator<string, void, unknown> {
+  const systemPrompt = await generateSystemPrompt(habits, tasks, currentHour);
+
+  // Try OpenClaw first
+  if (isOpenClawAvailable()) {
+    try {
+      const ocMessages = [
+        ...conversationHistory.map((msg) => ({
+          role: msg.role,
+          content: msg.content,
+        })),
+        { role: 'user', content: userMessage },
+      ];
+      yield* streamViaOpenClaw(systemPrompt, ocMessages);
+      return;
+    } catch (error) {
+      console.warn('[Claude] OpenClaw streaming failed, falling back to Anthropic:', error);
+      resetOpenClawStatus();
+      notifyProviderChange();
+    }
+  }
+
+  // Fallback to Anthropic
   if (!anthropic) {
     throw new Error('Claude API key not configured. Please add VITE_ANTHROPIC_API_KEY to your .env file.');
   }
-
-  const systemPrompt = await generateSystemPrompt(habits, tasks, currentHour);
 
   try {
     const messages: Anthropic.MessageParam[] = [

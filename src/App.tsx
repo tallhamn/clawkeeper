@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import type { Habit, Task, LLMAction, AppState } from '@/lib/types';
 import { generateId, getTodayDate } from '@/lib/utils';
 import { useCoachMessage } from '@/hooks/useCoachMessage';
@@ -7,7 +7,8 @@ import { TasksSection } from '@/components/TasksSection';
 import { ChatPanel } from '@/components/ChatPanel';
 import { UndoBar } from '@/components/UndoBar';
 import { SplashScreen } from '@/components/SplashScreen';
-import { initializeStorage, isInitialized, loadCurrentState, saveCurrentState, archiveOldCompletedTasks, getDefaultState } from '@/lib/storage';
+import { SetupPrompt, useSetupPrompt } from '@/components/SetupPrompt';
+import { initializeStorage, loadCurrentState, saveCurrentState, archiveOldCompletedTasks, getDefaultState, watchCurrentFile } from '@/lib/storage';
 import { APP_VERSION } from '@/lib/constants';
 
 function App() {
@@ -20,6 +21,9 @@ function App() {
   const [showCompleted, setShowCompleted] = useState(false);
   const [showSplash, setShowSplash] = useState(false);
 
+  // File watcher cleanup handle
+  const unwatchRef = useRef<(() => void) | null>(null);
+
   // Track which element is currently revealed (reflection input, edit controls, etc.)
   const [revealedItem, setRevealedItem] = useState<{ type: 'habit' | 'task'; id: string; mode: 'reflection' | 'edit' | 'add-subtask' | 'notes' } | null>(null);
 
@@ -29,6 +33,7 @@ function App() {
   const [undoMessage, setUndoMessage] = useState('');
 
   const { message: coachMessage, triggerReinforcement } = useCoachMessage(habits, currentHour);
+  const { shouldShow: showSetupPrompt, dismiss: dismissSetupPrompt } = useSetupPrompt();
 
   // Check if splash screen should be shown for this version
   useEffect(() => {
@@ -59,36 +64,33 @@ function App() {
       try {
         console.log('[Storage] Creating directory structure...');
         await initializeStorage();
-        console.log('[Storage] Checking if initialized...');
-        const initialized = await isInitialized();
-        console.log('[Storage] Is initialized:', initialized);
 
-        if (initialized) {
-          console.log('[Storage] Loading existing state...');
-          const state = await loadCurrentState();
-          if (state) {
-            console.log('[Storage] Loaded state:', {
-              habits: state.habits.length,
-              tasks: state.tasks.length
-            });
+        console.log('[Storage] Loading existing state...');
+        const state = await loadCurrentState();
 
-            // Archive old completed tasks
-            console.log('[Storage] Archiving old completed tasks...');
-            const archivedState = await archiveOldCompletedTasks(state);
+        if (state) {
+          console.log('[Storage] Loaded state:', {
+            habits: state.habits.length,
+            tasks: state.tasks.length
+          });
 
-            setHabits(archivedState.habits);
-            setTasks(archivedState.tasks);
-          }
+          // Archive old completed tasks
+          const archivedState = await archiveOldCompletedTasks(state);
+          setHabits(archivedState.habits);
+          setTasks(archivedState.tasks);
         } else {
-          // First launch: use default data
+          // File doesn't exist yet — first launch only
           console.log('[Storage] First launch - using default data');
           const defaultState = getDefaultState();
           setHabits(defaultState.habits);
           setTasks(defaultState.tasks);
-          console.log('[Storage] Saving initial state...');
           await saveCurrentState(defaultState);
-          console.log('[Storage] Initial state saved');
         }
+        // Start watching for external file changes
+        unwatchRef.current = await watchCurrentFile((newState) => {
+          setHabits(newState.habits);
+          setTasks(newState.tasks);
+        });
       } catch (error) {
         console.error('[Storage] Failed to initialize storage:', error);
         console.error('[Storage] Error details:', error);
@@ -102,6 +104,7 @@ function App() {
     };
 
     initApp();
+    return () => { unwatchRef.current?.(); };
   }, []);
 
   // Auto-save when habits or tasks change
@@ -617,6 +620,9 @@ function App() {
 
       {/* Splash Screen */}
       {showSplash && <SplashScreen onDismiss={handleDismissSplash} />}
+
+      {/* OpenClaw Setup Prompt (first launch with OpenClaw detected) */}
+      {!showSplash && showSetupPrompt && <SetupPrompt onDismiss={dismissSetupPrompt} />}
     </div>
   );
 }
