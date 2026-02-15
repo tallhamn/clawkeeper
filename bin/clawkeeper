@@ -1,4 +1,10 @@
 #!/usr/bin/env bash
-REAL_PATH="$(readlink -f "$0")"
-SCRIPT_DIR="$(cd "$(dirname "$REAL_PATH")/.." && pwd)"
+# Resolve symlinks to find the real script location (works on macOS + Linux)
+SOURCE="$0"
+while [ -L "$SOURCE" ]; do
+  DIR="$(cd -P "$(dirname "$SOURCE")" && pwd)"
+  SOURCE="$(readlink "$SOURCE")"
+  [[ "$SOURCE" != /* ]] && SOURCE="$DIR/$SOURCE"
+done
+SCRIPT_DIR="$(cd -P "$(dirname "$SOURCE")/.." && pwd)"
 exec npx --prefix "$SCRIPT_DIR" tsx "$SCRIPT_DIR/cli/main.ts" "$@"
