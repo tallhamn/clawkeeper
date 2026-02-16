@@ -1,6 +1,6 @@
 # ClawKeeper
 
-Your claw can't cook dinner — but it can plan the menu, find the recipe, and make the grocery list. ClawKeeper keeps your tasks and habits where your claw can reach them, so it can know where to help.
+Tasks and habits that live in a plain markdown file on your machine. Free, private, and claw-native: your AI assistant can read, plan, and act on your to-do list without an API or cloud sync.
 
 All data is stored as human-readable markdown in `~/.clawkeeper/current.md`.
 

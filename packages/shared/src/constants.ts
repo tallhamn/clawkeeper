@@ -3,7 +3,7 @@
  */
 
 // App version - increment this to show splash screen on new builds
-export const APP_VERSION = '1.1.0';
+export const APP_VERSION = '1.1.1';
 
 // Feature flags
 export const ENABLE_AUTO_REFLECTION = false; // Set to false to disable automatic reflection prompts

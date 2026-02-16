@@ -34,7 +34,7 @@ export function SplashScreen({ onDismiss }: SplashScreenProps) {
         {/* Main Message */}
         <div className="space-y-6 text-tokyo-text leading-relaxed">
           <p className="text-lg">
-            Agentic task management — use AI to handle your todos.
+            Tasks and habits that live in a plain markdown file on your machine. Free, private, and claw-native.
           </p>
 
           <p className="text-lg">

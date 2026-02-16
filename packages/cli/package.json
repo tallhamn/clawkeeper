@@ -1,7 +1,7 @@
 {
   "name": "clawkeeper",
-  "version": "0.1.0",
-  "description": "Tasks and habits for human-claw collaboration. Your claw can't cook dinner, but it can plan the menu.",
+  "version": "0.1.1",
+  "description": "Tasks and habits that live in a plain markdown file on your machine. Free, private, and claw-native.",
   "type": "module",
   "bin": {
     "clawkeeper": "./bin/clawkeeper"
