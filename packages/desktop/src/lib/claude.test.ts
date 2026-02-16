@@ -57,6 +57,7 @@ function makeTask(overrides: Partial<Task> = {}): Task {
     text: 'Buy groceries',
     completed: false,
     completedAt: null,
+    dueDate: null,
     notes: [],
     children: [],
     ...overrides,

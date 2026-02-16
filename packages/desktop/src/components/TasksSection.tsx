@@ -15,12 +15,13 @@ interface TasksSectionProps {
   onAddTask: (text: string) => void;
   onDelete: (id: string) => void;
   onUpdateText: (id: string, text: string) => void;
+  onUpdateDueDate: (id: string, dueDate: string | null) => void;
   revealedItem: { type: 'habit' | 'task'; id: string; mode: 'reflection' | 'edit' | 'add-subtask' | 'notes' } | null;
   onSetRevealed: (item: { type: 'habit' | 'task'; id: string; mode: 'reflection' | 'edit' | 'add-subtask' | 'notes' } | null) => void;
   onToggleShowCompleted: () => void;
 }
 
-export function TasksSection({ tasks, searchQuery, showCompleted, onToggle, onAddNote, onEditNote, onDeleteNote, onAddSubtask, onAddTask, onDelete, onUpdateText, revealedItem, onSetRevealed, onToggleShowCompleted }: TasksSectionProps) {
+export function TasksSection({ tasks, searchQuery, showCompleted, onToggle, onAddNote, onEditNote, onDeleteNote, onAddSubtask, onAddTask, onDelete, onUpdateText, onUpdateDueDate, revealedItem, onSetRevealed, onToggleShowCompleted }: TasksSectionProps) {
   const [isAdding, setIsAdding] = useState(false);
 
   // Filter tasks by search query
@@ -112,6 +113,7 @@ export function TasksSection({ tasks, searchQuery, showCompleted, onToggle, onAd
               onAddSubtask={onAddSubtask}
               onDelete={onDelete}
               onUpdateText={onUpdateText}
+              onUpdateDueDate={onUpdateDueDate}
               revealedItem={revealedItem}
               onSetRevealed={onSetRevealed}
             />

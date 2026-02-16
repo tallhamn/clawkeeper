@@ -40,6 +40,7 @@ export interface Task {
   text: string;
   completed: boolean;
   completedAt: string | null;  // ISO date string (YYYY-MM-DD)
+  dueDate: string | null;      // YYYY-MM-DD deadline
   notes: Note[];
   children: Task[];
 }
@@ -89,6 +90,7 @@ export interface LLMAction {
   noteText?: string;       // For add_note/edit_note/delete_note: the note content
   noteId?: string;         // For edit_note/delete_note: target note by id
   newNoteText?: string;    // For edit_note: the replacement text
+  dueDate?: string | null; // YYYY-MM-DD deadline (null to clear)
   habitText?: string;
   habitId?: string;
   repeatIntervalHours?: number;

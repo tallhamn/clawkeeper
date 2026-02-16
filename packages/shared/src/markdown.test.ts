@@ -35,6 +35,7 @@ describe('Markdown Serialization', () => {
         text: 'Hire VP of Sales',
         completed: false,
         completedAt: null,
+        dueDate: null,
         notes: [],
         children: [
           {
@@ -42,6 +43,7 @@ describe('Markdown Serialization', () => {
             text: 'Define role',
             completed: true,
             completedAt: '2025-01-05',
+            dueDate: null,
             notes: [
               { id: 'n3', text: 'took longer than expected', createdAt: '2025-01-05T12:00:00Z' },
             ],
@@ -57,6 +59,7 @@ describe('Markdown Serialization', () => {
     expect(parsed.tasks).toHaveLength(1);
     expect(parsed.tasks[0].text).toBe('Hire VP of Sales');
     expect(parsed.tasks[0].completed).toBe(false);
+    expect(parsed.tasks[0].dueDate).toBeNull();
     expect(parsed.tasks[0].children).toHaveLength(1);
     expect(parsed.tasks[0].children[0].text).toBe('Define role');
     expect(parsed.tasks[0].children[0].completed).toBe(true);
@@ -81,6 +84,7 @@ describe('Markdown Serialization', () => {
         text: 'Main task',
         completed: false,
         completedAt: null,
+        dueDate: null,
         notes: [
           { id: 'n4', text: 'reflection 1', createdAt: '2025-01-07T12:00:00Z' },
         ],
@@ -103,6 +107,7 @@ describe('Markdown Serialization', () => {
         text: 'Task without notes',
         completed: false,
         completedAt: null,
+        dueDate: null,
         notes: [],
         children: [],
       },
@@ -121,6 +126,7 @@ describe('Markdown Serialization', () => {
         text: 'Task with multiple notes',
         completed: true,
         completedAt: '2025-01-05',
+        dueDate: null,
         notes: [
           { id: 'n5', text: 'first note', createdAt: '2025-01-05T10:00:00Z' },
           { id: 'n6', text: 'second note', createdAt: '2025-01-05T11:00:00Z' },
@@ -148,6 +154,7 @@ describe('Markdown Serialization', () => {
         text: 'Research project',
         completed: false,
         completedAt: null,
+        dueDate: null,
         notes: [
           { id: 'n8', text: 'Found the API docs at example.com', createdAt: '2026-02-12T10:30:00Z' },
           { id: 'n9', text: 'Rate limit is 100 req/min', createdAt: '2026-02-12T11:00:00Z' },
@@ -175,6 +182,7 @@ describe('Markdown Serialization', () => {
         text: 'Parent task',
         completed: false,
         completedAt: null,
+        dueDate: null,
         notes: [],
         children: [
           {
@@ -182,6 +190,7 @@ describe('Markdown Serialization', () => {
             text: 'Subtask with notes',
             completed: false,
             completedAt: null,
+            dueDate: null,
             notes: [
               { id: 'n10', text: 'Subtask note here', createdAt: '2026-02-12T12:00:00Z' },
             ],
@@ -206,6 +215,7 @@ describe('Markdown Serialization', () => {
         text: 'Task with notes',
         completed: false,
         completedAt: null,
+        dueDate: null,
         notes: [
           { id: 'n11', text: 'a reflection', createdAt: '2026-02-12T09:00:00Z' },
           { id: 'n12', text: 'A note', createdAt: '2026-02-12T10:00:00Z' },
@@ -228,6 +238,7 @@ describe('Markdown Serialization', () => {
         text: 'Task without notes',
         completed: false,
         completedAt: null,
+        dueDate: null,
         notes: [],
         children: [],
       },
@@ -237,6 +248,116 @@ describe('Markdown Serialization', () => {
     const parsed = parseMarkdown(markdown);
 
     expect(parsed.tasks[0].notes).toEqual([]);
+  });
+
+  it('should serialize and parse due dates on root tasks', () => {
+    const tasks: Task[] = [
+      {
+        id: 't1',
+        text: 'Task with due date',
+        completed: false,
+        completedAt: null,
+        dueDate: '2025-03-15',
+        notes: [],
+        children: [],
+      },
+    ];
+
+    const markdown = serializeToMarkdown([], tasks);
+    expect(markdown).toContain('- Due: 2025-03-15');
+
+    const parsed = parseMarkdown(markdown);
+    expect(parsed.tasks[0].dueDate).toBe('2025-03-15');
+  });
+
+  it('should serialize and parse due dates on subtasks', () => {
+    const tasks: Task[] = [
+      {
+        id: 't1',
+        text: 'Parent',
+        completed: false,
+        completedAt: null,
+        dueDate: null,
+        notes: [],
+        children: [
+          {
+            id: 't2',
+            text: 'Subtask with due',
+            completed: false,
+            completedAt: null,
+            dueDate: '2025-03-20',
+            notes: [],
+            children: [],
+          },
+          {
+            id: 't3',
+            text: 'Completed subtask with due',
+            completed: true,
+            completedAt: '2025-03-10',
+            dueDate: '2025-03-15',
+            notes: [],
+            children: [],
+          },
+        ],
+      },
+    ];
+
+    const markdown = serializeToMarkdown([], tasks);
+    expect(markdown).toContain('(due:2025-03-20)');
+    expect(markdown).toContain('(due:2025-03-15) (2025-03-10)');
+
+    const parsed = parseMarkdown(markdown);
+    expect(parsed.tasks[0].children[0].dueDate).toBe('2025-03-20');
+    expect(parsed.tasks[0].children[0].completedAt).toBeNull();
+    expect(parsed.tasks[0].children[1].dueDate).toBe('2025-03-15');
+    expect(parsed.tasks[0].children[1].completedAt).toBe('2025-03-10');
+  });
+
+  it('should round-trip due dates correctly', () => {
+    const tasks: Task[] = [
+      {
+        id: 't1',
+        text: 'Root task',
+        completed: false,
+        completedAt: null,
+        dueDate: '2025-04-01',
+        notes: [],
+        children: [
+          {
+            id: 't2',
+            text: 'Sub with due',
+            completed: false,
+            completedAt: null,
+            dueDate: '2025-04-05',
+            notes: [],
+            children: [],
+          },
+        ],
+      },
+    ];
+
+    const markdown = serializeToMarkdown([], tasks);
+    const parsed = parseMarkdown(markdown);
+    const markdown2 = serializeToMarkdown([], parsed.tasks);
+
+    expect(markdown2).toBe(markdown);
+  });
+
+  it('should parse tasks without due dates as dueDate: null (backward compat)', () => {
+    const legacyMarkdown = `# Habits
+
+---
+
+# Tasks
+
+## Old task <!-- id:t1 -->
+- [ ] Old subtask <!-- id:t2 -->
+
+`;
+
+    const parsed = parseMarkdown(legacyMarkdown);
+    expect(parsed.tasks[0].dueDate).toBeNull();
+    expect(parsed.tasks[0].children[0].dueDate).toBeNull();
   });
 });
 
@@ -259,6 +380,7 @@ describe('Stable IDs', () => {
         text: 'Buy groceries',
         completed: false,
         completedAt: null,
+        dueDate: null,
         notes: [],
         children: [
           {
@@ -266,6 +388,7 @@ describe('Stable IDs', () => {
             text: 'Milk',
             completed: false,
             completedAt: null,
+            dueDate: null,
             notes: [],
             children: [
               {
@@ -273,6 +396,7 @@ describe('Stable IDs', () => {
                 text: 'Whole milk',
                 completed: false,
                 completedAt: null,
+                dueDate: null,
                 notes: [],
                 children: [],
               },
@@ -294,8 +418,8 @@ describe('Stable IDs', () => {
   it('should embed IDs as HTML comments in serialized output', () => {
     const markdown = serializeToMarkdown(
       [{ id: 'abc123', text: 'Run', repeatIntervalHours: 24, totalCompletions: 0, lastCompleted: null, notes: [] }],
-      [{ id: 'def456', text: 'Task', completed: false, completedAt: null, notes: [], children: [
-        { id: 'ghi789', text: 'Sub', completed: false, completedAt: null, notes: [], children: [] },
+      [{ id: 'def456', text: 'Task', completed: false, completedAt: null, dueDate: null, notes: [], children: [
+        { id: 'ghi789', text: 'Sub', completed: false, completedAt: null, dueDate: null, notes: [], children: [] },
       ] }],
     );
 
@@ -348,8 +472,8 @@ describe('Stable IDs', () => {
       { id: 'h1', text: 'Meditate', repeatIntervalHours: 24, totalCompletions: 0, lastCompleted: null, notes: [] },
     ];
     const tasks: Task[] = [
-      { id: 't1', text: 'Buy groceries', completed: false, completedAt: null, notes: [], children: [
-        { id: 's1', text: 'Milk', completed: false, completedAt: null, notes: [], children: [] },
+      { id: 't1', text: 'Buy groceries', completed: false, completedAt: null, dueDate: null, notes: [], children: [
+        { id: 's1', text: 'Milk', completed: false, completedAt: null, dueDate: null, notes: [], children: [] },
       ] },
     ];
 
@@ -429,6 +553,7 @@ describe('Stable IDs', () => {
         text: 'Buy groceries',
         completed: false,
         completedAt: null,
+        dueDate: null,
         notes: [
           { id: 'tn1', text: 'Check pantry first', createdAt: '2025-01-07T09:00:00Z' },
           { id: 'tn2', text: 'Compare prices', createdAt: '2025-01-07T09:30:00Z' },
@@ -439,6 +564,7 @@ describe('Stable IDs', () => {
             text: 'Milk',
             completed: false,
             completedAt: null,
+            dueDate: null,
             notes: [
               { id: 'sn1', text: 'Get whole milk', createdAt: '2025-01-07T10:00:00Z' },
             ],
@@ -532,7 +658,7 @@ describe('healIds', () => {
         { id: 'dup', text: 'Habit', repeatIntervalHours: 24, totalCompletions: 0, lastCompleted: null, notes: [] },
       ],
       tasks: [
-        { id: 'dup', text: 'Task', completed: false, completedAt: null, notes: [], children: [] },
+        { id: 'dup', text: 'Task', completed: false, completedAt: null, dueDate: null, notes: [], children: [] },
       ],
     };
 
@@ -548,7 +674,7 @@ describe('healIds', () => {
     const state: AppState = {
       habits: [],
       tasks: [
-        { id: '', text: 'Task', completed: false, completedAt: null, notes: [], children: [] },
+        { id: '', text: 'Task', completed: false, completedAt: null, dueDate: null, notes: [], children: [] },
       ],
     };
 
@@ -566,9 +692,10 @@ describe('healIds', () => {
           text: 'Parent',
           completed: false,
           completedAt: null,
+          dueDate: null,
           notes: [],
           children: [
-            { id: 'parent', text: 'Child with dup ID', completed: false, completedAt: null, notes: [], children: [] },
+            { id: 'parent', text: 'Child with dup ID', completed: false, completedAt: null, dueDate: null, notes: [], children: [] },
           ],
         },
       ],
@@ -585,8 +712,8 @@ describe('healIds', () => {
         { id: 'h1', text: 'Habit', repeatIntervalHours: 24, totalCompletions: 0, lastCompleted: null, notes: [] },
       ],
       tasks: [
-        { id: 't1', text: 'Task', completed: false, completedAt: null, notes: [], children: [
-          { id: 't2', text: 'Sub', completed: false, completedAt: null, notes: [], children: [] },
+        { id: 't1', text: 'Task', completed: false, completedAt: null, dueDate: null, notes: [], children: [
+          { id: 't2', text: 'Sub', completed: false, completedAt: null, dueDate: null, notes: [], children: [] },
         ] },
       ],
     };

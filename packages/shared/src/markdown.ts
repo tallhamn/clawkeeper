@@ -68,8 +68,9 @@ export function serializeToMarkdown(habits: Habit[], tasks: Task[]): string {
   const serializeTask = (task: Task, depth = 0) => {
     const indent = '  '.repeat(depth);
     const checkbox = task.completed ? '[x]' : '[ ]';
+    const dueDatePart = task.dueDate ? ` (due:${task.dueDate})` : '';
     const completedDate = task.completedAt ? ` (${task.completedAt})` : '';
-    md += `${indent}- ${checkbox} ${task.text}${completedDate} <!-- id:${task.id} -->\n`;
+    md += `${indent}- ${checkbox} ${task.text}${dueDatePart}${completedDate} <!-- id:${task.id} -->\n`;
     if (task.notes && task.notes.length > 0) {
       task.notes.forEach((n) => {
         md += `${indent}  | [${n.createdAt}] ${n.text} <!-- nid:${n.id} -->\n`;
@@ -84,6 +85,9 @@ export function serializeToMarkdown(habits: Habit[], tasks: Task[]): string {
     md += `## ${task.text} <!-- id:${task.id} -->\n`;
     if (task.completed) {
       md += `- Status: completed${task.completedAt ? ` (${task.completedAt})` : ''}\n`;
+    }
+    if (task.dueDate) {
+      md += `- Due: ${task.dueDate}\n`;
     }
     if (task.notes && task.notes.length > 0) {
       task.notes.forEach((n) => {
@@ -175,6 +179,7 @@ export function parseMarkdown(md: string): AppState {
           text,
           completed: false,
           completedAt: null,
+          dueDate: null,
           notes: [],
           children: [],
         };
@@ -184,6 +189,11 @@ export function parseMarkdown(md: string): AppState {
           currentTask.completed = true;
           const dateMatch = line.match(/\((\d{4}-\d{2}-\d{2})\)/);
           if (dateMatch) currentTask.completedAt = dateMatch[1];
+        } else if (line.startsWith('- Due: ')) {
+          const dueDateValue = line.slice(7).trim();
+          if (dueDateValue.match(/^\d{4}-\d{2}-\d{2}$/)) {
+            currentTask.dueDate = dueDateValue;
+          }
         } else if (line.startsWith('> ') && taskStack.length === 1) {
           currentTask.notes.push({ id: generateId(), createdAt: '', text: line.slice(2) });
         } else if (line.startsWith('| ') && taskStack.length === 1) {
@@ -195,18 +205,20 @@ export function parseMarkdown(md: string): AppState {
           // Extract and strip all ID comments before matching
           const [, lineId] = extractId(line);
           const cleanLine = line.replace(ID_COMMENT_RE, '');
-          const match = cleanLine.match(/^(\s*)- \[(x| )\] (.+?)(?:\s+\((\d{4}-\d{2}-\d{2})\))?$/);
+          const match = cleanLine.match(/^(\s*)- \[(x| )\] (.+?)(?:\s+\(due:(\d{4}-\d{2}-\d{2})\))?(?:\s+\((\d{4}-\d{2}-\d{2})\))?$/);
           if (match) {
             const depth = match[1].length / 2;
             const completed = match[2] === 'x';
             const text = match[3];
-            const completedAt = match[4] || null;
+            const dueDate = match[4] || null;
+            const completedAt = match[5] || null;
 
             const newTask: Task = {
               id: lineId || generateId(),
               text,
               completed,
               completedAt,
+              dueDate,
               notes: [],
               children: [],
             };

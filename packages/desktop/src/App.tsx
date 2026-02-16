@@ -283,6 +283,7 @@ function App() {
           text: text.trim(),
           completed: false,
           completedAt: null,
+          dueDate: null,
           notes: [],
           children: [],
         },
@@ -301,6 +302,7 @@ function App() {
             text,
             completed: false,
             completedAt: null,
+            dueDate: null,
             notes: [],
             children: [],
           },
@@ -323,6 +325,10 @@ function App() {
 
   const updateTaskText = (id: string, text: string) => {
     setTasks((prev) => findAndUpdate(prev, id, (t) => ({ ...t, text })));
+  };
+
+  const updateTaskDueDate = (id: string, dueDate: string | null) => {
+    setTasks((prev) => findAndUpdate(prev, id, (t) => ({ ...t, dueDate })));
   };
 
   const moveTask = (taskId: string, newParentId: string | null) => {
@@ -368,6 +374,16 @@ function App() {
       case 'add_task':
         if (action.text) {
           addTask(action.text);
+          if (action.dueDate) {
+            // Find the just-added task (last in array) and set due date
+            setTasks((prev) => {
+              const last = prev[prev.length - 1];
+              if (last && last.text === action.text) {
+                return [...prev.slice(0, -1), { ...last, dueDate: action.dueDate ?? null }];
+              }
+              return prev;
+            });
+          }
           setUndoMessage(`Added task: "${action.text}"`);
           setShowUndo(true);
           setTimeout(() => setShowUndo(false), 10000);
@@ -413,6 +429,9 @@ function App() {
       case 'edit_task':
         if (action.taskId && action.text) {
           updateTaskText(action.taskId, action.text);
+          if (action.dueDate !== undefined) {
+            updateTaskDueDate(action.taskId, action.dueDate ?? null);
+          }
           setUndoMessage(`Updated task text`);
           setShowUndo(true);
           setTimeout(() => setShowUndo(false), 10000);
@@ -622,6 +641,7 @@ function App() {
           onAddTask={addTask}
           onDelete={deleteTask}
           onUpdateText={updateTaskText}
+          onUpdateDueDate={updateTaskDueDate}
           revealedItem={revealedItem}
           onSetRevealed={setRevealedItem}
           onToggleShowCompleted={() => setShowCompleted(!showCompleted)}

@@ -9,6 +9,7 @@ import {
   editTask,
   deleteTask,
   moveTask,
+  setTaskDueDate,
   addTaskNote,
   editTaskNote,
   deleteTaskNote,
@@ -94,7 +95,8 @@ function run() {
 
         case 'add': {
           if (!text) { fail('--text is required'); return; }
-          const out = addTask(state, text);
+          const dueDate = flags['due-date'] as string | undefined;
+          const out = addTask(state, text, dueDate);
           state = out.state;
           result = out.task;
           modified = true;
@@ -104,7 +106,8 @@ function run() {
         case 'add-subtask': {
           const parentId = flags['parent-id'] as string | undefined;
           if (!text) { fail('--text is required'); return; }
-          const out = addSubtask(state, parentId, flags['parent-text'] as string | undefined, text);
+          const dueDate = flags['due-date'] as string | undefined;
+          const out = addSubtask(state, parentId, flags['parent-text'] as string | undefined, text, dueDate);
           state = out.state;
           result = out.task;
           modified = true;
@@ -126,7 +129,9 @@ function run() {
         case 'edit': {
           const newText = flags['new-text'] as string;
           if (!newText) { fail('--new-text is required'); return; }
-          state = editTask(state, newText, id, text);
+          const editDueDate = flags['due-date'] as string | undefined;
+          const dueDateValue = editDueDate === 'none' ? null : editDueDate;
+          state = editTask(state, newText, id, text, dueDateValue);
           result = { edited: true };
           modified = true;
           break;
@@ -174,6 +179,16 @@ function run() {
           if (!note && !noteId) { fail('--note or --note-id is required'); return; }
           state = deleteTaskNote(state, note, id, text, noteId);
           result = { noteDeleted: true };
+          modified = true;
+          break;
+        }
+
+        case 'set-due-date': {
+          const dueDateFlag = flags['due-date'] as string | undefined;
+          if (!dueDateFlag) { fail('--due-date is required (use "none" to clear)'); return; }
+          const dueDate = dueDateFlag === 'none' ? null : dueDateFlag;
+          state = setTaskDueDate(state, dueDate, id, text);
+          result = { dueDateSet: true };
           modified = true;
           break;
         }

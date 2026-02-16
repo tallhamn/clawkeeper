@@ -45,6 +45,7 @@ describe('Storage Filtering - Unchecked Tasks', () => {
         text: 'Unchecked Task',
         completed: false,
         completedAt: null,  // Set to null when unchecked
+        dueDate: null,
         notes: [],
         children: [],
       },
@@ -66,6 +67,7 @@ describe('Storage Filtering - Unchecked Tasks', () => {
         text: 'Toggled Task',
         completed: false,  // Unchecked
         completedAt: null,  // Set to null by toggleTask
+        dueDate: null,
         notes: [
           { text: 'Did this earlier', createdAt: '2026-02-12T10:00:00Z' },
         ],
@@ -90,6 +92,7 @@ describe('Storage Filtering - Unchecked Tasks', () => {
         text: 'Parent Task',
         completed: false,
         completedAt: null,
+        dueDate: null,
         notes: [],
         children: [
           {
@@ -97,6 +100,7 @@ describe('Storage Filtering - Unchecked Tasks', () => {
             text: 'Old Completed Child',
             completed: true,
             completedAt: '2025-12-15',  // Previous month
+            dueDate: null,
             notes: [],
             children: [],
           },
@@ -120,6 +124,7 @@ describe('Storage Filtering - Unchecked Tasks', () => {
         text: 'Old Completed Task',
         completed: true,
         completedAt: '2025-12-15',  // Previous month
+        dueDate: null,
         notes: [],
         children: [],
       },
@@ -139,6 +144,7 @@ describe('Storage Filtering - Unchecked Tasks', () => {
         text: 'Recently Completed Task',
         completed: true,
         completedAt: `${currentMonth}-08`,  // This month
+        dueDate: null,
         notes: [],
         children: [],
       },
@@ -159,6 +165,7 @@ describe('Storage Filtering - Unchecked Tasks', () => {
         text: 'Incomplete Task',
         completed: false,
         completedAt: null,
+        dueDate: null,
         notes: [],
         children: [],
       },
@@ -167,6 +174,7 @@ describe('Storage Filtering - Unchecked Tasks', () => {
         text: 'Completed This Month',
         completed: true,
         completedAt: `${currentMonth}-05`,
+        dueDate: null,
         notes: [],
         children: [],
       },
@@ -175,6 +183,7 @@ describe('Storage Filtering - Unchecked Tasks', () => {
         text: 'Old Completed Task',
         completed: true,
         completedAt: '2025-12-15',
+        dueDate: null,
         notes: [],
         children: [],
       },
@@ -183,6 +192,7 @@ describe('Storage Filtering - Unchecked Tasks', () => {
         text: 'Unchecked Task',
         completed: false,
         completedAt: null,
+        dueDate: null,
         notes: [],
         children: [],
       },

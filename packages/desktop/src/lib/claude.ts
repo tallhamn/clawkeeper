@@ -88,7 +88,8 @@ async function generateSystemPrompt(habits: Habit[], tasks: Task[], currentHour:
     for (const task of tasks) {
       const indent = '  '.repeat(depth);
       const status = task.completed ? '✓' : '○';
-      result.push(`${indent}${status} ${task.text}`);
+      const duePart = task.dueDate ? ` [due: ${task.dueDate}]` : '';
+      result.push(`${indent}${status} ${task.text}${duePart}`);
       if (task.notes && task.notes.length > 0) {
         task.notes.forEach(n => {
           result.push(`${indent}  📝 "${n.text}"`);
@@ -158,7 +159,7 @@ When the user asks you to make changes, propose them using JSON format in code b
 
 **Task Operations:**
 \`\`\`json-action
-{"type": "add_task", "text": "New task", "label": "Add 'New task'"}
+{"type": "add_task", "text": "New task", "dueDate": "2025-03-15", "label": "Add 'New task'"}
 \`\`\`
 
 \`\`\`json-action
@@ -174,8 +175,10 @@ When the user asks you to make changes, propose them using JSON format in code b
 \`\`\`
 
 \`\`\`json-action
-{"type": "edit_task", "taskText": "old name", "text": "new name", "label": "Rename task"}
+{"type": "edit_task", "taskText": "old name", "text": "new name", "dueDate": "2025-04-01", "label": "Rename task"}
 \`\`\`
+
+Note: For edit_task, include dueDate only when you want to set or change it. Use dueDate: null to clear a due date.
 
 \`\`\`json-action
 {"type": "add_subtask", "parentText": "parent", "text": "subtask", "label": "Add subtask: parent"}

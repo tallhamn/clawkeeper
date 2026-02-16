@@ -13,6 +13,7 @@ import {
   editTask,
   deleteTask,
   moveTask,
+  setTaskDueDate,
   addTaskNote,
   editTaskNote,
   deleteTaskNote,
@@ -33,6 +34,7 @@ function makeTask(overrides: Partial<Task> = {}): Task {
     text: 'Test task',
     completed: false,
     completedAt: null,
+    dueDate: null,
     notes: [],
     children: [],
     ...overrides,
@@ -376,6 +378,75 @@ describe('deleteTaskNote', () => {
   it('throws if note not found', () => {
     const initial = makeState({ tasks: [makeTask({ id: 't1' })] });
     expect(() => deleteTaskNote(initial, 'nope', 't1')).toThrow('Note not found');
+  });
+});
+
+// ── Due date operations ──
+
+describe('addTask with dueDate', () => {
+  it('adds a task with a due date', () => {
+    const { state, task } = addTask(makeState(), 'Deadline task', '2025-03-15');
+    expect(task.dueDate).toBe('2025-03-15');
+    expect(state.tasks[0].dueDate).toBe('2025-03-15');
+  });
+
+  it('adds a task without a due date', () => {
+    const { task } = addTask(makeState(), 'No deadline');
+    expect(task.dueDate).toBeNull();
+  });
+});
+
+describe('addSubtask with dueDate', () => {
+  it('adds a subtask with a due date', () => {
+    const parent = makeTask({ id: 'p1' });
+    const initial = makeState({ tasks: [parent] });
+    const { task } = addSubtask(initial, 'p1', undefined, 'Child', '2025-04-01');
+    expect(task.dueDate).toBe('2025-04-01');
+  });
+});
+
+describe('setTaskDueDate', () => {
+  it('sets a due date on a task', () => {
+    const initial = makeState({ tasks: [makeTask({ id: 't1' })] });
+    const state = setTaskDueDate(initial, '2025-03-15', 't1');
+    expect(state.tasks[0].dueDate).toBe('2025-03-15');
+  });
+
+  it('clears a due date', () => {
+    const initial = makeState({ tasks: [makeTask({ id: 't1', dueDate: '2025-03-15' })] });
+    const state = setTaskDueDate(initial, null, 't1');
+    expect(state.tasks[0].dueDate).toBeNull();
+  });
+
+  it('sets due date by text lookup', () => {
+    const initial = makeState({ tasks: [makeTask({ text: 'Important task' })] });
+    const state = setTaskDueDate(initial, '2025-06-01', undefined, 'important task');
+    expect(state.tasks[0].dueDate).toBe('2025-06-01');
+  });
+
+  it('throws if task not found', () => {
+    expect(() => setTaskDueDate(makeState(), '2025-03-15', 'nope')).toThrow('Task not found');
+  });
+});
+
+describe('editTask with dueDate', () => {
+  it('edits text and sets due date', () => {
+    const initial = makeState({ tasks: [makeTask({ id: 't1', text: 'old' })] });
+    const state = editTask(initial, 'new', 't1', undefined, '2025-03-15');
+    expect(state.tasks[0].text).toBe('new');
+    expect(state.tasks[0].dueDate).toBe('2025-03-15');
+  });
+
+  it('edits text and clears due date', () => {
+    const initial = makeState({ tasks: [makeTask({ id: 't1', text: 'old', dueDate: '2025-03-15' })] });
+    const state = editTask(initial, 'new', 't1', undefined, null);
+    expect(state.tasks[0].dueDate).toBeNull();
+  });
+
+  it('edits text without changing due date when dueDate is undefined', () => {
+    const initial = makeState({ tasks: [makeTask({ id: 't1', text: 'old', dueDate: '2025-03-15' })] });
+    const state = editTask(initial, 'new', 't1');
+    expect(state.tasks[0].dueDate).toBe('2025-03-15');
   });
 });
 

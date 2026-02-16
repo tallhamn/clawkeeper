@@ -145,6 +145,50 @@ export function formatTimeSince(lastCompleted: string | null, totalCompletions?:
 }
 
 /**
+ * Due-date status categories
+ */
+export type DueDateStatus = 'overdue' | 'due-today' | 'upcoming' | 'future';
+
+/**
+ * Get the urgency status of a due date relative to today.
+ * Returns null if dueDate is null/undefined.
+ */
+export function getDueDateStatus(dueDate: string | null | undefined): DueDateStatus | null {
+  if (!dueDate) return null;
+  const today = getTodayDate();
+  const diffDays = dateDiffDays(today, dueDate);
+  if (diffDays < 0) return 'overdue';
+  if (diffDays === 0) return 'due-today';
+  if (diffDays <= 3) return 'upcoming';
+  return 'future';
+}
+
+/**
+ * Human-readable label for a due date relative to today.
+ * Returns null if dueDate is null/undefined.
+ */
+export function formatDueDate(dueDate: string | null | undefined): string | null {
+  if (!dueDate) return null;
+  const today = getTodayDate();
+  const diff = dateDiffDays(today, dueDate);
+  if (diff === 0) return 'today';
+  if (diff === 1) return 'tomorrow';
+  if (diff === -1) return 'yesterday';
+  if (diff < -1) return `${Math.abs(diff)}d overdue`;
+  return `in ${diff}d`;
+}
+
+/**
+ * Difference in calendar days from dateA to dateB.
+ * Positive means dateB is in the future relative to dateA.
+ */
+function dateDiffDays(dateA: string, dateB: string): number {
+  const a = new Date(dateA + 'T00:00:00');
+  const b = new Date(dateB + 'T00:00:00');
+  return Math.round((b.getTime() - a.getTime()) / (24 * 60 * 60 * 1000));
+}
+
+/**
  * Format countdown until habit is available again
  */
 export function formatCountdown(lastCompleted: string | null, intervalHours: number): string {

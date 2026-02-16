@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import type { Task } from '@clawkeeper/shared/src/types';
 import { ENABLE_AUTO_REFLECTION } from '@clawkeeper/shared/src/constants';
+import { getDueDateStatus, formatDueDate } from '@clawkeeper/shared/src/utils';
 
 interface TaskItemProps {
   task: Task;
@@ -15,6 +16,7 @@ interface TaskItemProps {
   onSetRevealed: (item: { type: 'habit' | 'task'; id: string; mode: 'reflection' | 'edit' | 'add-subtask' | 'notes' } | null) => void;
   onDelete?: (id: string) => void;
   onUpdateText?: (id: string, text: string) => void;
+  onUpdateDueDate?: (id: string, dueDate: string | null) => void;
 }
 
 export function TaskItem({
@@ -30,6 +32,7 @@ export function TaskItem({
   onSetRevealed,
   onDelete,
   onUpdateText,
+  onUpdateDueDate,
 }: TaskItemProps) {
   const [reflectionText, setReflectionText] = useState('');
   const [subtaskText, setSubtaskText] = useState('');
@@ -160,17 +163,33 @@ export function TaskItem({
                     autoFocus
                   />
                 ) : (
-                  <span
-                    onClick={() => {
-                      if (showNotes) {
-                        onSetRevealed(null);
-                      } else {
-                        onSetRevealed({ type: 'task', id: task.id, mode: 'notes' });
-                      }
-                    }}
-                    className={`text-sm text-tokyo-text-bright ${isVisuallyCompleted && !showReflectionInput ? 'line-through text-tokyo-text-muted' : ''} cursor-pointer hover:text-tokyo-blue`}
-                  >
-                    {task.text}
+                  <span className="inline-flex items-center gap-1.5">
+                    <span
+                      onClick={() => {
+                        if (showNotes) {
+                          onSetRevealed(null);
+                        } else {
+                          onSetRevealed({ type: 'task', id: task.id, mode: 'notes' });
+                        }
+                      }}
+                      className={`text-sm text-tokyo-text-bright ${isVisuallyCompleted && !showReflectionInput ? 'line-through text-tokyo-text-muted' : ''} cursor-pointer hover:text-tokyo-blue`}
+                    >
+                      {task.text}
+                    </span>
+                    {!task.completed && task.dueDate && (() => {
+                      const status = getDueDateStatus(task.dueDate);
+                      const label = formatDueDate(task.dueDate);
+                      const colorClass =
+                        status === 'overdue' ? 'text-tokyo-red bg-tokyo-red/10' :
+                        status === 'due-today' ? 'text-tokyo-yellow bg-tokyo-yellow/10' :
+                        status === 'upcoming' ? 'text-tokyo-cyan bg-tokyo-cyan/10' :
+                        'text-tokyo-text-dim bg-tokyo-surface-alt';
+                      return (
+                        <span data-testid="due-date-badge" className={`text-[10px] font-medium px-1.5 py-0.5 rounded ${colorClass}`}>
+                          {label}
+                        </span>
+                      );
+                    })()}
                   </span>
                 )}
               </div>
@@ -225,6 +244,33 @@ export function TaskItem({
                 >
                   Edit name
                 </button>
+                {onUpdateDueDate && (
+                  <>
+                    <span className="text-tokyo-text-dim">·</span>
+                    <label className="text-xs text-tokyo-cyan hover:text-tokyo-text cursor-pointer">
+                      {task.dueDate ? 'Change due date' : 'Set due date'}
+                      <input
+                        type="date"
+                        className="sr-only"
+                        value={task.dueDate || ''}
+                        onChange={(e) => {
+                          onUpdateDueDate(task.id, e.target.value || null);
+                        }}
+                      />
+                    </label>
+                    {task.dueDate && (
+                      <>
+                        <span className="text-tokyo-text-dim">·</span>
+                        <button
+                          onClick={() => onUpdateDueDate(task.id, null)}
+                          className="text-xs text-tokyo-text-muted hover:text-tokyo-text"
+                        >
+                          Clear due date
+                        </button>
+                      </>
+                    )}
+                  </>
+                )}
                 {onDelete && (
                   <>
                     <span className="text-tokyo-text-dim">·</span>
@@ -445,6 +491,7 @@ export function TaskItem({
           onAddSubtask={onAddSubtask}
           onDelete={onDelete}
           onUpdateText={onUpdateText}
+          onUpdateDueDate={onUpdateDueDate}
           revealedItem={revealedItem}
           onSetRevealed={onSetRevealed}
         />

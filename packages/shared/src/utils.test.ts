@@ -11,6 +11,8 @@ import {
   formatInterval,
   formatTimeSince,
   formatCountdown,
+  getDueDateStatus,
+  formatDueDate,
 } from './utils';
 
 describe('generateId', () => {
@@ -297,6 +299,80 @@ describe('formatTimeSince', () => {
 
     const threeDaysAgo = new Date('2025-01-05T12:00:00Z').toISOString();
     expect(formatTimeSince(threeDaysAgo)).toBe('done 3d ago');
+  });
+});
+
+describe('getDueDateStatus', () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2025-03-15T12:00:00Z'));
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it('should return null for null/undefined dueDate', () => {
+    expect(getDueDateStatus(null)).toBeNull();
+    expect(getDueDateStatus(undefined)).toBeNull();
+  });
+
+  it('should return "overdue" for past dates', () => {
+    expect(getDueDateStatus('2025-03-13')).toBe('overdue');
+    expect(getDueDateStatus('2025-03-14')).toBe('overdue');
+  });
+
+  it('should return "due-today" for today', () => {
+    expect(getDueDateStatus('2025-03-15')).toBe('due-today');
+  });
+
+  it('should return "upcoming" for 1-3 days ahead', () => {
+    expect(getDueDateStatus('2025-03-16')).toBe('upcoming');
+    expect(getDueDateStatus('2025-03-17')).toBe('upcoming');
+    expect(getDueDateStatus('2025-03-18')).toBe('upcoming');
+  });
+
+  it('should return "future" for 4+ days ahead', () => {
+    expect(getDueDateStatus('2025-03-19')).toBe('future');
+    expect(getDueDateStatus('2025-04-01')).toBe('future');
+  });
+});
+
+describe('formatDueDate', () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2025-03-15T12:00:00Z'));
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it('should return null for null/undefined', () => {
+    expect(formatDueDate(null)).toBeNull();
+    expect(formatDueDate(undefined)).toBeNull();
+  });
+
+  it('should return "today" for today', () => {
+    expect(formatDueDate('2025-03-15')).toBe('today');
+  });
+
+  it('should return "tomorrow" for tomorrow', () => {
+    expect(formatDueDate('2025-03-16')).toBe('tomorrow');
+  });
+
+  it('should return "yesterday" for yesterday', () => {
+    expect(formatDueDate('2025-03-14')).toBe('yesterday');
+  });
+
+  it('should return "Xd overdue" for past dates', () => {
+    expect(formatDueDate('2025-03-13')).toBe('2d overdue');
+    expect(formatDueDate('2025-03-10')).toBe('5d overdue');
+  });
+
+  it('should return "in Xd" for future dates', () => {
+    expect(formatDueDate('2025-03-17')).toBe('in 2d');
+    expect(formatDueDate('2025-03-20')).toBe('in 5d');
   });
 });
 

@@ -77,20 +77,21 @@ export function listTasks(state: AppState, all = false): Task[] {
   return all ? state.tasks : filterIncomplete(state.tasks);
 }
 
-export function addTask(state: AppState, text: string): { state: AppState; task: Task } {
+export function addTask(state: AppState, text: string, dueDate?: string): { state: AppState; task: Task } {
   if (!text) throw new Error('--text is required');
   const task: Task = {
     id: generateId(),
     text,
     completed: false,
     completedAt: null,
+    dueDate: dueDate || null,
     notes: [],
     children: [],
   };
   return { state: { ...state, tasks: [...state.tasks, task] }, task };
 }
 
-export function addSubtask(state: AppState, parentId: string | undefined, parentText: string | undefined, text: string): { state: AppState; task: Task } {
+export function addSubtask(state: AppState, parentId: string | undefined, parentText: string | undefined, text: string, dueDate?: string): { state: AppState; task: Task } {
   if (!text) throw new Error('--text is required');
   const parent = resolveTask(state, parentId, parentText);
   const task: Task = {
@@ -98,6 +99,7 @@ export function addSubtask(state: AppState, parentId: string | undefined, parent
     text,
     completed: false,
     completedAt: null,
+    dueDate: dueDate || null,
     notes: [],
     children: [],
   };
@@ -130,12 +132,22 @@ export function uncompleteTask(state: AppState, id?: string, text?: string): App
   return { ...state, tasks };
 }
 
-export function editTask(state: AppState, newText: string, id?: string, text?: string): AppState {
+export function editTask(state: AppState, newText: string, id?: string, text?: string, dueDate?: string | null): AppState {
   if (!newText) throw new Error('--text is required for new text');
   const task = resolveTask(state, id, text);
   const tasks = updateTaskInTree(state.tasks, task.id, t => ({
     ...t,
     text: newText,
+    ...(dueDate !== undefined ? { dueDate } : {}),
+  }));
+  return { ...state, tasks };
+}
+
+export function setTaskDueDate(state: AppState, dueDate: string | null, id?: string, text?: string): AppState {
+  const task = resolveTask(state, id, text);
+  const tasks = updateTaskInTree(state.tasks, task.id, t => ({
+    ...t,
+    dueDate,
   }));
   return { ...state, tasks };
 }

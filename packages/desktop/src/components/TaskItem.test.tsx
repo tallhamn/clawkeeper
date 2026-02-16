@@ -15,12 +15,35 @@ vi.mock('@clawkeeper/shared/src/constants', () => ({
   REINFORCEMENT_MESSAGE_DURATION: 4000,
 }));
 
+// Mock getDueDateStatus and formatDueDate to control output in tests
+vi.mock('@clawkeeper/shared/src/utils', async () => {
+  const actual = await vi.importActual('@clawkeeper/shared/src/utils');
+  return {
+    ...actual,
+    getDueDateStatus: (d: string | null) => {
+      if (!d) return null;
+      if (d === '2025-01-01') return 'overdue';
+      if (d === '2025-03-15') return 'due-today';
+      if (d === '2025-03-16') return 'upcoming';
+      return 'future';
+    },
+    formatDueDate: (d: string | null) => {
+      if (!d) return null;
+      if (d === '2025-01-01') return '2d overdue';
+      if (d === '2025-03-15') return 'today';
+      if (d === '2025-03-16') return 'tomorrow';
+      return 'in 5d';
+    },
+  };
+});
+
 describe('TaskItem Component', () => {
   const mockTask: Task = {
     id: 't1',
     text: 'Test task',
     completed: false,
     completedAt: null,
+    dueDate: null,
     notes: [],
     children: [],
   };
@@ -146,6 +169,7 @@ describe('TaskItem Component', () => {
           text: 'Subtask 1',
           completed: false,
           completedAt: null,
+          dueDate: null,
           notes: [],
           children: [],
         },
@@ -438,5 +462,181 @@ describe('TaskItem Component', () => {
     fireEvent.click(screen.getAllByText('Save')[0]);
 
     expect(onEditNote).toHaveBeenCalledWith('t1', 'tn5', 'Updated note');
+  });
+
+  // Due date badge tests
+  it('should show due date badge for overdue task', () => {
+    const overdueTask: Task = {
+      ...mockTask,
+      dueDate: '2025-01-01',
+    };
+
+    render(
+      <TaskItem
+        task={overdueTask}
+        depth={0}
+        showCompleted={true}
+        onToggle={vi.fn()}
+        onAddNote={vi.fn()}
+        onEditNote={vi.fn()}
+        onDeleteNote={vi.fn()}
+        onAddSubtask={vi.fn()}
+        revealedItem={null}
+        onSetRevealed={vi.fn()}
+      />
+    );
+
+    const badge = screen.getByTestId('due-date-badge');
+    expect(badge).toBeInTheDocument();
+    expect(badge.textContent).toBe('2d overdue');
+    expect(badge.className).toContain('text-tokyo-red');
+  });
+
+  it('should show due date badge for task due today', () => {
+    const todayTask: Task = {
+      ...mockTask,
+      dueDate: '2025-03-15',
+    };
+
+    render(
+      <TaskItem
+        task={todayTask}
+        depth={0}
+        showCompleted={true}
+        onToggle={vi.fn()}
+        onAddNote={vi.fn()}
+        onEditNote={vi.fn()}
+        onDeleteNote={vi.fn()}
+        onAddSubtask={vi.fn()}
+        revealedItem={null}
+        onSetRevealed={vi.fn()}
+      />
+    );
+
+    const badge = screen.getByTestId('due-date-badge');
+    expect(badge.textContent).toBe('today');
+    expect(badge.className).toContain('text-tokyo-yellow');
+  });
+
+  it('should show due date badge for upcoming task', () => {
+    const upcomingTask: Task = {
+      ...mockTask,
+      dueDate: '2025-03-16',
+    };
+
+    render(
+      <TaskItem
+        task={upcomingTask}
+        depth={0}
+        showCompleted={true}
+        onToggle={vi.fn()}
+        onAddNote={vi.fn()}
+        onEditNote={vi.fn()}
+        onDeleteNote={vi.fn()}
+        onAddSubtask={vi.fn()}
+        revealedItem={null}
+        onSetRevealed={vi.fn()}
+      />
+    );
+
+    const badge = screen.getByTestId('due-date-badge');
+    expect(badge.textContent).toBe('tomorrow');
+    expect(badge.className).toContain('text-tokyo-cyan');
+  });
+
+  it('should not show due date badge for completed task', () => {
+    const completedWithDue: Task = {
+      ...mockTask,
+      completed: true,
+      completedAt: '2025-03-10',
+      dueDate: '2025-01-01',
+    };
+
+    render(
+      <TaskItem
+        task={completedWithDue}
+        depth={0}
+        showCompleted={true}
+        onToggle={vi.fn()}
+        onAddNote={vi.fn()}
+        onEditNote={vi.fn()}
+        onDeleteNote={vi.fn()}
+        onAddSubtask={vi.fn()}
+        revealedItem={null}
+        onSetRevealed={vi.fn()}
+      />
+    );
+
+    expect(screen.queryByTestId('due-date-badge')).not.toBeInTheDocument();
+  });
+
+  it('should not show due date badge when dueDate is null', () => {
+    render(
+      <TaskItem
+        task={mockTask}
+        depth={0}
+        showCompleted={true}
+        onToggle={vi.fn()}
+        onAddNote={vi.fn()}
+        onEditNote={vi.fn()}
+        onDeleteNote={vi.fn()}
+        onAddSubtask={vi.fn()}
+        revealedItem={null}
+        onSetRevealed={vi.fn()}
+      />
+    );
+
+    expect(screen.queryByTestId('due-date-badge')).not.toBeInTheDocument();
+  });
+
+  it('should show set/clear due date buttons in edit panel', () => {
+    const onUpdateDueDate = vi.fn();
+    const taskWithDue: Task = {
+      ...mockTask,
+      dueDate: '2025-03-15',
+    };
+
+    render(
+      <TaskItem
+        task={taskWithDue}
+        depth={0}
+        showCompleted={true}
+        onToggle={vi.fn()}
+        onAddNote={vi.fn()}
+        onEditNote={vi.fn()}
+        onDeleteNote={vi.fn()}
+        onAddSubtask={vi.fn()}
+        onUpdateDueDate={onUpdateDueDate}
+        revealedItem={{ type: 'task', id: 't1', mode: 'edit' }}
+        onSetRevealed={vi.fn()}
+      />
+    );
+
+    expect(screen.getByText('Change due date')).toBeInTheDocument();
+    expect(screen.getByText('Clear due date')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByText('Clear due date'));
+    expect(onUpdateDueDate).toHaveBeenCalledWith('t1', null);
+  });
+
+  it('should show "Set due date" when task has no due date', () => {
+    render(
+      <TaskItem
+        task={mockTask}
+        depth={0}
+        showCompleted={true}
+        onToggle={vi.fn()}
+        onAddNote={vi.fn()}
+        onEditNote={vi.fn()}
+        onDeleteNote={vi.fn()}
+        onAddSubtask={vi.fn()}
+        onUpdateDueDate={vi.fn()}
+        revealedItem={{ type: 'task', id: 't1', mode: 'edit' }}
+        onSetRevealed={vi.fn()}
+      />
+    );
+
+    expect(screen.getByText('Set due date')).toBeInTheDocument();
+    expect(screen.queryByText('Clear due date')).not.toBeInTheDocument();
   });
 });

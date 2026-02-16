@@ -44,6 +44,7 @@ describe('App - moveTask functionality', () => {
             text: 'Parent Task',
             completed: false,
             completedAt: null,
+            dueDate: null,
             notes: [],
             children: [],
           },
@@ -52,6 +53,7 @@ describe('App - moveTask functionality', () => {
             text: 'Task to Move',
             completed: false,
             completedAt: null,
+            dueDate: null,
             notes: [],
             children: [],
           },
@@ -84,6 +86,7 @@ describe('App - moveTask functionality', () => {
             text: 'Parent Task',
             completed: false,
             completedAt: null,
+            dueDate: null,
             notes: [],
             children: [
               {
@@ -91,6 +94,7 @@ describe('App - moveTask functionality', () => {
                 text: 'Child Task',
                 completed: false,
                 completedAt: null,
+                dueDate: null,
                 notes: [],
                 children: [],
               },
@@ -118,6 +122,7 @@ describe('App - moveTask functionality', () => {
             text: 'Parent Task 1',
             completed: false,
             completedAt: null,
+            dueDate: null,
             notes: [],
             children: [
               {
@@ -125,6 +130,7 @@ describe('App - moveTask functionality', () => {
                 text: 'Child Task',
                 completed: false,
                 completedAt: null,
+                dueDate: null,
                 notes: [],
                 children: [],
               },
@@ -135,6 +141,7 @@ describe('App - moveTask functionality', () => {
             text: 'Parent Task 2',
             completed: false,
             completedAt: null,
+            dueDate: null,
             notes: [],
             children: [],
           },
@@ -160,6 +167,7 @@ describe('App - moveTask functionality', () => {
             text: 'Parent Task',
             completed: false,
             completedAt: null,
+            dueDate: null,
             notes: [],
             children: [],
           },
@@ -168,6 +176,7 @@ describe('App - moveTask functionality', () => {
             text: 'Task with Children',
             completed: false,
             completedAt: null,
+            dueDate: null,
             notes: [],
             children: [
               {
@@ -175,6 +184,7 @@ describe('App - moveTask functionality', () => {
                 text: 'Grandchild Task',
                 completed: false,
                 completedAt: null,
+                dueDate: null,
                 notes: [],
                 children: [],
               },
@@ -204,6 +214,7 @@ describe('App - moveTask functionality', () => {
             text: 'Task 1',
             completed: false,
             completedAt: null,
+            dueDate: null,
             notes: [],
             children: [],
           },
@@ -234,6 +245,7 @@ describe('App - moveTask functionality', () => {
             text: 'Task 1',
             completed: false,
             completedAt: null,
+            dueDate: null,
             notes: [],
             children: [],
           },
@@ -258,6 +270,7 @@ describe('App - moveTask functionality', () => {
             text: 'Active Parent Task',
             completed: false,
             completedAt: null,
+            dueDate: null,
             notes: [],
             children: [],
           },
@@ -266,6 +279,7 @@ describe('App - moveTask functionality', () => {
             text: 'Task with Notes',
             completed: false,
             completedAt: null,
+            dueDate: null,
             notes: [
               { text: 'Great work!', createdAt: '2026-02-12T10:00:00Z' },
               { text: 'Made good progress', createdAt: '2026-02-12T11:00:00Z' },
@@ -302,6 +316,7 @@ describe('App - moveTask functionality', () => {
             text: 'Root Task',
             completed: false,
             completedAt: null,
+            dueDate: null,
             notes: [],
             children: [
               {
@@ -309,6 +324,7 @@ describe('App - moveTask functionality', () => {
                 text: 'Child Task',
                 completed: false,
                 completedAt: null,
+                dueDate: null,
                 notes: [],
                 children: [
                   {
@@ -316,6 +332,7 @@ describe('App - moveTask functionality', () => {
                     text: 'Grandchild Task',
                     completed: false,
                     completedAt: null,
+                    dueDate: null,
                     notes: [],
                     children: [],
                   },
@@ -344,6 +361,7 @@ describe('App - moveTask functionality', () => {
             text: 'Parent 1',
             completed: false,
             completedAt: null,
+            dueDate: null,
             notes: [],
             children: [],
           },
@@ -352,6 +370,7 @@ describe('App - moveTask functionality', () => {
             text: 'Task with Nested Children',
             completed: false,
             completedAt: null,
+            dueDate: null,
             notes: [],
             children: [
               {
@@ -359,6 +378,7 @@ describe('App - moveTask functionality', () => {
                 text: 'Child',
                 completed: false,
                 completedAt: null,
+                dueDate: null,
                 notes: [],
                 children: [
                   {
@@ -366,6 +386,7 @@ describe('App - moveTask functionality', () => {
                     text: 'Grandchild',
                     completed: false,
                     completedAt: null,
+                    dueDate: null,
                     notes: [],
                     children: [],
                   },
@@ -397,6 +418,7 @@ describe('App - moveTask functionality', () => {
             text: 'Task 1',
             completed: false,
             completedAt: null,
+            dueDate: null,
             notes: [],
             children: [
               {
@@ -404,6 +426,7 @@ describe('App - moveTask functionality', () => {
                 text: 'Subtask 1',
                 completed: false,
                 completedAt: null,
+                dueDate: null,
                 notes: [],
                 children: [],
               },
@@ -414,6 +437,7 @@ describe('App - moveTask functionality', () => {
             text: 'Task 2',
             completed: false,
             completedAt: null,
+            dueDate: null,
             notes: [],
             children: [],
           },
@@ -576,6 +600,7 @@ describe('Note matching for LLM edit/delete', () => {
         text: 'Research compensation',
         completed: false,
         completedAt: null,
+        dueDate: null,
         notes: [
           { text: 'Apple: $280k', createdAt: '2026-02-10T10:00:00Z' },
           { text: 'Anduril: $300k', createdAt: '2026-02-10T11:00:00Z' },
@@ -606,6 +631,7 @@ describe('Note matching for LLM edit/delete', () => {
           text: 'Research API',
           completed: false,
           completedAt: null,
+          dueDate: null,
           notes: [
             { text: 'Rate limit is 100 req/min', createdAt: '2026-02-12T10:00:00Z' },
           ],
@@ -648,6 +674,7 @@ describe('External file change detection (regression)', () => {
           text: 'Existing task',
           completed: false,
           completedAt: null,
+          dueDate: null,
           notes: [],
           children: [],
         },
@@ -675,6 +702,7 @@ describe('External file change detection (regression)', () => {
           text: 'Existing task',
           completed: false,
           completedAt: null,
+          dueDate: null,
           notes: [],
           children: [],
         },
@@ -683,6 +711,7 @@ describe('External file change detection (regression)', () => {
           text: 'Task from CLI',
           completed: false,
           completedAt: null,
+          dueDate: null,
           notes: [],
           children: [],
         },
@@ -787,6 +816,7 @@ describe('External file change detection (regression)', () => {
           text: 'Default task',
           completed: false,
           completedAt: null,
+          dueDate: null,
           notes: [],
           children: [],
         },
@@ -816,7 +846,7 @@ describe('External file change detection (regression)', () => {
     vi.mocked(storage.loadCurrentState).mockResolvedValue(emptyState);
     vi.mocked(storage.getDefaultState).mockReturnValue({
       habits: [{ id: 'default-h', text: 'Default habit', repeatIntervalHours: 24, lastCompleted: null, totalCompletions: 0, notes: [] }],
-      tasks: [{ id: 'default-t', text: 'Default task', completed: false, completedAt: null, notes: [], children: [] }],
+      tasks: [{ id: 'default-t', text: 'Default task', completed: false, completedAt: null, dueDate: null, notes: [], children: [] }],
     });
 
     const { container } = render(<App />);

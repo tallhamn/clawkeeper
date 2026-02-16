@@ -10,6 +10,7 @@ describe('TasksSection', () => {
       text: 'Task 1',
       completed: false,
       completedAt: null,
+      dueDate: null,
       notes: [],
       children: [],
     },
@@ -18,6 +19,7 @@ describe('TasksSection', () => {
       text: 'Completed Task',
       completed: true,
       completedAt: '2026-01-08',
+      dueDate: null,
       notes: [],
       children: [],
     },
@@ -35,6 +37,7 @@ describe('TasksSection', () => {
     onAddTask: vi.fn(),
     onDelete: vi.fn(),
     onUpdateText: vi.fn(),
+    onUpdateDueDate: vi.fn(),
     revealedItem: null,
     onSetRevealed: vi.fn(),
     onToggleShowCompleted: vi.fn(),
@@ -61,6 +64,7 @@ describe('TasksSection', () => {
       text: 'Recently Completed Task',
       completed: true,
       completedAt: '2026-01-08',
+      dueDate: null,
       notes: [],
       children: [],
     };
@@ -102,6 +106,7 @@ describe('TasksSection', () => {
       text: 'Parent Task',
       completed: true,
       completedAt: '2026-01-08',
+      dueDate: null,
       notes: [],
       children: [
         {
@@ -109,6 +114,7 @@ describe('TasksSection', () => {
           text: 'Incomplete Child',
           completed: false,
           completedAt: null,
+          dueDate: null,
           notes: [],
           children: [],
         },
@@ -135,6 +141,7 @@ describe('TasksSection', () => {
       text: 'Old Task',
       completed: true,
       completedAt: '2025-12-15', // Previous month
+      dueDate: null,
       notes: [],
       children: [],
     };
@@ -176,6 +183,7 @@ describe('TasksSection', () => {
         text: 'Research API',
         completed: false,
         completedAt: null,
+        dueDate: null,
         notes: [
           { text: 'Rate limit is 100 req/min', createdAt: '2026-02-12T10:00:00Z' },
         ],
@@ -186,6 +194,7 @@ describe('TasksSection', () => {
         text: 'Other task',
         completed: false,
         completedAt: null,
+        dueDate: null,
         notes: [],
         children: [],
       },
