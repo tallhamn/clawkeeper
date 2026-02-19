@@ -362,19 +362,23 @@ export function HabitItem({
                   >
                     {habit.text}
                   </span>
-                  {!editMode && (
-                    <>
-                      <span className="text-tokyo-yellow ml-1.5">• {getTimeLabel()}</span>
-                      {isDue && !isResting && getTimeLabel().includes('late') && (
-                        <button
-                          onClick={(e) => { e.stopPropagation(); onToggle(habit.id, 'skip'); }}
-                          className="text-transparent group-hover:text-tokyo-red text-xs ml-1.5 transition-colors"
-                        >
-                          skip
-                        </button>
-                      )}
-                    </>
-                  )}
+                  {!editMode && (() => {
+                    const timeLabel = getTimeLabel();
+                    const showSkip = isDue && !isResting && habit.preferredHour != null && !timeLabel.startsWith('in ');
+                    return (
+                      <>
+                        <span className="text-tokyo-yellow ml-1.5">• {timeLabel}</span>
+                        {showSkip && (
+                          <button
+                            onClick={(e) => { e.stopPropagation(); onToggle(habit.id, 'skip'); }}
+                            className="text-transparent group-hover:text-tokyo-red text-xs ml-1.5 transition-colors"
+                          >
+                            skip
+                          </button>
+                        )}
+                      </>
+                    );
+                  })()}
                   {editMode && (
                     <span
                       onClick={handleStartEditingInterval}

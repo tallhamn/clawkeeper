@@ -232,28 +232,12 @@ export function sortHabitQueue(habits: Habit[], currentHour: number): Habit[] {
     return Math.min(diff, 24 - diff);
   }
 
-  function getScore(habit: Habit): number {
-    const intervalMs = habit.repeatIntervalHours * 60 * 60 * 1000;
-
-    // Overdue ratio
-    let overdueRatio: number;
-    if (!habit.lastCompleted) {
-      overdueRatio = 100; // Never completed → very urgent
-    } else {
-      const elapsed = now - new Date(habit.lastCompleted).getTime();
-      overdueRatio = elapsed / intervalMs;
-    }
-
-    // Time-of-day boost (0 to 0.5)
-    // Habits without a preferredHour get a neutral 0.25 (midpoint)
-    let timeBoost = 0.25;
-    if (habit.preferredHour != null) {
-      const dist = circularHourDistance(currentHour, habit.preferredHour);
-      // dist 0 → boost 0.5, dist 12 → boost 0
-      timeBoost = 0.5 * (1 - dist / 12);
-    }
-
-    return overdueRatio * (1 + timeBoost);
+  /** Lower = sooner = higher priority. */
+  function getForwardHours(habit: Habit): number {
+    if (habit.preferredHour == null) return 12; // no preference → middle of the pack
+    // Hours until the next occurrence of preferredHour
+    const forward = (habit.preferredHour - currentHour + 24) % 24;
+    return forward === 0 ? 0 : forward; // 0 means "right now"
   }
 
   const available: Habit[] = [];
@@ -267,8 +251,8 @@ export function sortHabitQueue(habits: Habit[], currentHour: number): Habit[] {
     }
   }
 
-  // Available: highest score first
-  available.sort((a, b) => getScore(b) - getScore(a));
+  // Available: soonest preferred hour first
+  available.sort((a, b) => getForwardHours(a) - getForwardHours(b));
 
   // Resting: soonest to become available first
   resting.sort((a, b) => {
