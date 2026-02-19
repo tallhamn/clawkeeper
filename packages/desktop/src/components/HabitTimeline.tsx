@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import type { Habit } from '@clawkeeper/shared/src/types';
+import { getHabitMarkerHours } from '@clawkeeper/shared/src/utils';
 
 interface HabitTimelineProps {
   habits: Habit[];
@@ -16,24 +17,6 @@ interface TimelineEntry {
   kind: 'logged' | 'planned' | 'planned-past';
 }
 
-/** Returns true if a habit has a marker on the timeline (has preferredHour). */
-export function habitHasMarker(habit: Habit): boolean {
-  return habit.preferredHour != null;
-}
-
-/** Compute the marker hours for a single habit (handles sub-daily repeats). */
-export function getHabitMarkerHours(habit: Habit): number[] {
-  if (habit.preferredHour == null) return [];
-  if (habit.repeatIntervalHours >= 24) {
-    return [habit.preferredHour];
-  }
-  const count = Math.min(Math.floor(24 / habit.repeatIntervalHours), 12);
-  const hours: number[] = [];
-  for (let j = 0; j < count; j++) {
-    hours.push((habit.preferredHour + j * habit.repeatIntervalHours) % 24);
-  }
-  return hours;
-}
 
 function computeEntries(habits: Habit[], nowHour: number): TimelineEntry[] {
   const entries: TimelineEntry[] = [];

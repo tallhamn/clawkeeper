@@ -15,7 +15,10 @@ import { APP_VERSION } from '@clawkeeper/shared/src/constants';
 function App() {
   const [habits, setHabits] = useState<Habit[]>([]);
   const [tasks, setTasks] = useState<Task[]>([]);
-  const [currentHour, setCurrentHour] = useState(() => new Date().getHours());
+  const [currentHour, setCurrentHour] = useState(() => {
+    const now = new Date();
+    return now.getHours() + now.getMinutes() / 60;
+  });
   const [chatOpen, setChatOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -164,7 +167,8 @@ function App() {
   // Update current hour every minute
   useEffect(() => {
     const interval = setInterval(() => {
-      setCurrentHour(new Date().getHours());
+      const now = new Date();
+      setCurrentHour(now.getHours() + now.getMinutes() / 60);
     }, 60000);
     return () => clearInterval(interval);
   }, []);

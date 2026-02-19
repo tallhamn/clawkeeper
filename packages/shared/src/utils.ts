@@ -216,6 +216,22 @@ export function formatCountdown(lastCompleted: string | null, intervalHours: num
 }
 
 /**
+ * Compute the marker hours for a single habit (handles sub-daily repeats).
+ */
+export function getHabitMarkerHours(habit: Habit): number[] {
+  if (habit.preferredHour == null) return [];
+  if (habit.repeatIntervalHours >= 24) {
+    return [habit.preferredHour];
+  }
+  const count = Math.min(Math.floor(24 / habit.repeatIntervalHours), 12);
+  const hours: number[] = [];
+  for (let j = 0; j < count; j++) {
+    hours.push((habit.preferredHour + j * habit.repeatIntervalHours) % 24);
+  }
+  return hours;
+}
+
+/**
  * Sort habits as a priority queue.
  * Available habits first (sorted by urgency score descending),
  * then resting habits (sorted by soonest to become available).
@@ -227,17 +243,16 @@ export function formatCountdown(lastCompleted: string | null, intervalHours: num
 export function sortHabitQueue(habits: Habit[], currentHour: number): Habit[] {
   const now = Date.now();
 
-  function circularHourDistance(a: number, b: number): number {
-    const diff = Math.abs(a - b);
-    return Math.min(diff, 24 - diff);
-  }
-
-  /** Lower = sooner = higher priority. */
+  /** Lower = sooner = higher priority. Uses all marker hours for sub-daily habits. */
   function getForwardHours(habit: Habit): number {
-    if (habit.preferredHour == null) return 12; // no preference → middle of the pack
-    // Hours until the next occurrence of preferredHour
-    const forward = (habit.preferredHour - currentHour + 24) % 24;
-    return forward === 0 ? 0 : forward; // 0 means "right now"
+    const markers = getHabitMarkerHours(habit);
+    if (markers.length === 0) return 12; // no preference → middle of the pack
+    let best = 24;
+    for (const h of markers) {
+      const forward = (h - currentHour + 24) % 24;
+      if (forward < best) best = forward;
+    }
+    return best;
   }
 
   const available: Habit[] = [];

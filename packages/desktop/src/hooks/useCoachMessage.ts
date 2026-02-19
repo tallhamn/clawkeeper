@@ -1,7 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import type { Habit } from '@clawkeeper/shared/src/types';
-import { isHabitAvailable, formatTimeSince } from '@clawkeeper/shared/src/utils';
-import { getHabitMarkerHours } from '@/components/HabitTimeline';
+import { isHabitAvailable, formatTimeSince, getHabitMarkerHours } from '@clawkeeper/shared/src/utils';
 import { sendMessage } from '@/lib/claude';
 
 interface LastAction {

@@ -1,7 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import type { Habit } from '@clawkeeper/shared/src/types';
-import { formatInterval, formatTimeSince, isHabitAvailable, formatCountdown } from '@clawkeeper/shared/src/utils';
-import { getHabitMarkerHours } from './HabitTimeline';
+import { formatInterval, formatTimeSince, isHabitAvailable, formatCountdown, getHabitMarkerHours } from '@clawkeeper/shared/src/utils';
 import { ENABLE_AUTO_REFLECTION } from '@clawkeeper/shared/src/constants';
 
 interface HabitItemProps {
