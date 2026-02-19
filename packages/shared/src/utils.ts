@@ -1,4 +1,4 @@
-import type { TimeWindow, RelativeTime } from './types';
+import type { Habit, TimeWindow, RelativeTime } from './types';
 import { TIME_WINDOWS } from './types';
 
 /**
@@ -213,4 +213,69 @@ export function formatCountdown(lastCompleted: string | null, intervalHours: num
   } else {
     return `active again in ${seconds}s`;
   }
+}
+
+/**
+ * Sort habits as a priority queue.
+ * Available habits first (sorted by urgency score descending),
+ * then resting habits (sorted by soonest to become available).
+ *
+ * Urgency score = overdueRatio + timeBoost
+ * - overdueRatio: how overdue the habit is relative to its interval
+ * - timeBoost: 0–0.5 bonus when current hour is close to preferredHour
+ */
+export function sortHabitQueue(habits: Habit[], currentHour: number): Habit[] {
+  const now = Date.now();
+
+  function circularHourDistance(a: number, b: number): number {
+    const diff = Math.abs(a - b);
+    return Math.min(diff, 24 - diff);
+  }
+
+  function getScore(habit: Habit): number {
+    const intervalMs = habit.repeatIntervalHours * 60 * 60 * 1000;
+
+    // Overdue ratio
+    let overdueRatio: number;
+    if (!habit.lastCompleted) {
+      overdueRatio = 100; // Never completed → very urgent
+    } else {
+      const elapsed = now - new Date(habit.lastCompleted).getTime();
+      overdueRatio = elapsed / intervalMs;
+    }
+
+    // Time-of-day boost (0 to 0.5)
+    // Habits without a preferredHour get a neutral 0.25 (midpoint)
+    let timeBoost = 0.25;
+    if (habit.preferredHour != null) {
+      const dist = circularHourDistance(currentHour, habit.preferredHour);
+      // dist 0 → boost 0.5, dist 12 → boost 0
+      timeBoost = 0.5 * (1 - dist / 12);
+    }
+
+    return overdueRatio * (1 + timeBoost);
+  }
+
+  const available: Habit[] = [];
+  const resting: Habit[] = [];
+
+  for (const habit of habits) {
+    if (isHabitAvailable(habit.lastCompleted, habit.repeatIntervalHours, habit.forcedAvailable)) {
+      available.push(habit);
+    } else {
+      resting.push(habit);
+    }
+  }
+
+  // Available: highest score first
+  available.sort((a, b) => getScore(b) - getScore(a));
+
+  // Resting: soonest to become available first
+  resting.sort((a, b) => {
+    const aHours = getHoursUntilAvailable(a.lastCompleted, a.repeatIntervalHours);
+    const bHours = getHoursUntilAvailable(b.lastCompleted, b.repeatIntervalHours);
+    return aHours - bHours;
+  });
+
+  return [...available, ...resting];
 }

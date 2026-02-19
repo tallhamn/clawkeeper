@@ -22,9 +22,12 @@ export interface Habit {
   text: string;
   repeatIntervalHours: number; // How often the habit repeats (default: 24)
   lastCompleted: string | null; // ISO timestamp of when it was last completed
+  completionHistory: string[]; // ISO timestamps of recent completions (kept for rolling 48h)
   totalCompletions: number; // All-time completion count
   notes: Note[];
   forcedAvailable?: boolean; // If true, habit is available even if interval hasn't passed
+  preferredHour?: number; // 0-23, ideal time of day inferred by LLM from habit name
+  icon?: string; // Emoji icon inferred by LLM from habit name
 }
 
 // Note model

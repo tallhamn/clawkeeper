@@ -268,6 +268,7 @@ export function addHabit(state: AppState, text: string, interval: number = 24): 
     text,
     repeatIntervalHours: interval,
     lastCompleted: null,
+    completionHistory: [],
     totalCompletions: 0,
     notes: [],
   };
@@ -296,9 +297,11 @@ export function completeHabit(state: AppState, id?: string, text?: string): AppS
   const habit = resolveHabit(state, id, text);
   const habits = state.habits.map(h => {
     if (h.id !== habit.id) return h;
+    const now = new Date().toISOString();
     return {
       ...h,
-      lastCompleted: new Date().toISOString(),
+      lastCompleted: now,
+      completionHistory: [...(h.completionHistory || []), now],
       totalCompletions: h.totalCompletions + 1,
       forcedAvailable: false,
     };

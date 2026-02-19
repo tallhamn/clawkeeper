@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import type { Habit, Task, LLMAction, AppState } from '@clawkeeper/shared/src/types';
 import { generateId, getTodayDate } from '@clawkeeper/shared/src/utils';
 import { useCoachMessage } from '@/hooks/useCoachMessage';
@@ -9,6 +9,7 @@ import { UndoBar } from '@/components/UndoBar';
 import { SplashScreen } from '@/components/SplashScreen';
 import { SetupPrompt, useSetupPrompt } from '@/components/SetupPrompt';
 import { initializeStorage, loadCurrentState, saveCurrentState, archiveOldCompletedTasks, getDefaultState, watchCurrentFile } from '@/lib/storage';
+import { inferPreferredHours, inferHabitIcons } from '@/lib/claude';
 import { APP_VERSION } from '@clawkeeper/shared/src/constants';
 
 function App() {
@@ -34,6 +35,43 @@ function App() {
 
   const { message: coachMessage, triggerReinforcement } = useCoachMessage(habits, currentHour);
   const { shouldShow: showSetupPrompt, dismiss: dismissSetupPrompt } = useSetupPrompt();
+
+  // Infer preferredHour and icon for habits that lack them
+  const inferringRef = useRef(false);
+  const assignPreferredHours = useCallback(async (currentHabits: Habit[]) => {
+    const missingHours = currentHabits.filter((h) => h.preferredHour == null);
+    const missingIcons = currentHabits.filter((h) => h.icon == null);
+    if ((missingHours.length === 0 && missingIcons.length === 0) || inferringRef.current) return;
+
+    inferringRef.current = true;
+    try {
+      const [hourResult, iconResult] = await Promise.all([
+        missingHours.length > 0 ? inferPreferredHours(missingHours.map((h) => h.text)) : {},
+        missingIcons.length > 0 ? inferHabitIcons(missingIcons.map((h) => h.text)) : {},
+      ]);
+
+      const hasHours = Object.keys(hourResult).length > 0;
+      const hasIcons = Object.keys(iconResult).length > 0;
+      if (hasHours || hasIcons) {
+        setHabits((prev) =>
+          prev.map((h) => {
+            let updated = h;
+            if (h.preferredHour == null && hourResult[h.text] != null) {
+              updated = { ...updated, preferredHour: hourResult[h.text] };
+            }
+            if (h.icon == null && iconResult[h.text] != null) {
+              updated = { ...updated, icon: iconResult[h.text] };
+            }
+            return updated;
+          })
+        );
+      }
+    } catch (error) {
+      console.warn('[App] Failed to infer habit metadata:', error);
+    } finally {
+      inferringRef.current = false;
+    }
+  }, []);
 
   // Check if splash screen should be shown for this version
   useEffect(() => {
@@ -116,6 +154,13 @@ function App() {
     }
   }, [habits, tasks, isLoading]);
 
+  // Infer preferredHour for any habits missing it (after initial load)
+  useEffect(() => {
+    if (!isLoading && habits.length > 0) {
+      assignPreferredHours(habits);
+    }
+  }, [isLoading, habits, assignPreferredHours]);
+
   // Update current hour every minute
   useEffect(() => {
     const interval = setInterval(() => {
@@ -130,7 +175,7 @@ function App() {
     if (!habit) return;
 
     if (action === 'complete') {
-      // Complete: increment and update lastCompleted
+      // Complete: increment and update lastCompleted + history
       const now = new Date().toISOString();
       setHabits((prev) =>
         prev.map((h) =>
@@ -138,6 +183,7 @@ function App() {
             ? {
                 ...h,
                 lastCompleted: now,
+                completionHistory: [...(h.completionHistory || []), now],
                 totalCompletions: h.totalCompletions + 1,
                 forcedAvailable: false, // Clear forced availability when completing
               }
@@ -146,18 +192,20 @@ function App() {
       );
       triggerReinforcement(habit.text, habit.totalCompletions);
     } else if (action === 'undo') {
-      // Undo: decrement and reset lastCompleted
+      // Undo: decrement, remove last entry from history, restore previous lastCompleted
       setHabits((prev) =>
-        prev.map((h) =>
-          h.id === id
-            ? {
-                ...h,
-                lastCompleted: null,
-                totalCompletions: Math.max(0, h.totalCompletions - 1),
-                forcedAvailable: false,
-              }
-            : h
-        )
+        prev.map((h) => {
+          if (h.id !== id) return h;
+          const history = [...(h.completionHistory || [])];
+          history.pop(); // remove the most recent completion
+          return {
+            ...h,
+            lastCompleted: history.length > 0 ? history[history.length - 1] : null,
+            completionHistory: history,
+            totalCompletions: Math.max(0, h.totalCompletions - 1),
+            forcedAvailable: false,
+          };
+        })
       );
       console.log(`[Habit] Unchecked "${habit.text}"`);
     } else if (action === 'wakeup') {
@@ -174,6 +222,21 @@ function App() {
         )
       );
       console.log(`[Habit] Woke up "${habit.text}" - now available again (forced)`);
+    } else if (action === 'skip') {
+      // Skip: reset the cycle timer without counting as a completion
+      const now = new Date().toISOString();
+      setHabits((prev) =>
+        prev.map((h) =>
+          h.id === id
+            ? {
+                ...h,
+                lastCompleted: now,
+                forcedAvailable: false,
+              }
+            : h
+        )
+      );
+      console.log(`[Habit] Skipped "${habit.text}" - cycle reset`);
     }
   };
 
@@ -186,7 +249,7 @@ function App() {
   };
 
   const updateHabitText = (id: string, text: string) => {
-    setHabits((prev) => prev.map((h) => (h.id === id ? { ...h, text } : h)));
+    setHabits((prev) => prev.map((h) => (h.id === id ? { ...h, text, preferredHour: undefined } : h)));
   };
 
   const addHabit = (text: string, intervalHours: number) => {
@@ -198,6 +261,7 @@ function App() {
           text: text.trim(),
           totalCompletions: 0,
           lastCompleted: null,
+          completionHistory: [],
           repeatIntervalHours: intervalHours,
           notes: [],
         },

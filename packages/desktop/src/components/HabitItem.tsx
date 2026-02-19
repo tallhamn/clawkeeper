@@ -1,12 +1,15 @@
 import { useState, useEffect, useRef } from 'react';
 import type { Habit } from '@clawkeeper/shared/src/types';
 import { formatInterval, formatTimeSince, isHabitAvailable, formatCountdown } from '@clawkeeper/shared/src/utils';
+import { getHabitMarkerHours } from './HabitTimeline';
 import { ENABLE_AUTO_REFLECTION } from '@clawkeeper/shared/src/constants';
 
 interface HabitItemProps {
   habit: Habit;
   editMode?: boolean;
-  onToggle: (id: string, action?: 'complete' | 'undo' | 'wakeup') => void;
+  isTimelineHighlighted?: boolean;
+  onHoverTimeline?: (id: string | null) => void;
+  onToggle: (id: string, action?: 'complete' | 'undo' | 'wakeup' | 'skip') => void;
   onDelete: (id: string) => void;
   onUpdateInterval: (id: string, intervalHours: number) => void;
   onUpdateText: (id: string, text: string) => void;
@@ -22,6 +25,8 @@ type IntervalUnit = 'minutes' | 'hours' | 'days' | 'weeks';
 export function HabitItem({
   habit,
   editMode = false,
+  isTimelineHighlighted = false,
+  onHoverTimeline,
   onToggle,
   onDelete,
   onUpdateInterval,
@@ -36,7 +41,7 @@ export function HabitItem({
   const [editText, setEditText] = useState(habit.text);
   const [reflectionText, setReflectionText] = useState('');
   const [newNoteText, setNewNoteText] = useState('');
-  const [editingNoteIndex, setEditingNoteIndex] = useState<number | null>(null);
+  const [editingNoteId, setEditingNoteId] = useState<string | null>(null);
   const [editingNoteText, setEditingNoteText] = useState('');
   const [isEditingInterval, setIsEditingInterval] = useState(false);
   const [intervalValue, setIntervalValue] = useState(1);
@@ -48,6 +53,7 @@ export function HabitItem({
   const [showCountdown, setShowCountdown] = useState(false);
   const [countdown, setCountdown] = useState('');
   const [forcedDue, setForcedDue] = useState(false);
+  const [showAllNotes, setShowAllNotes] = useState(false);
   const previousTotalCompletions = useRef(habit.totalCompletions);
 
   // Determine habit state (can be overridden by forcedAvailable or forcedDue for wake-up)
@@ -233,8 +239,49 @@ export function HabitItem({
     }
   };
 
+  const getTimeLabel = (): string => {
+    // Resting or no preferred hour — show completion info
+    if (isResting || habit.preferredHour == null) {
+      return formatTimeSince(habit.lastCompleted, habit.totalCompletions);
+    }
+    const now = new Date();
+    const currentHour = now.getHours() + now.getMinutes() / 60;
+    const hours = getHabitMarkerHours(habit);
+    // Find nearest future slot
+    let nearest: number | null = null;
+    let nearestDiff = Infinity;
+    for (const h of hours) {
+      const diff = h - currentHour;
+      if (diff >= 0 && diff < nearestDiff) {
+        nearestDiff = diff;
+        nearest = h;
+      }
+    }
+    // If no future slot, find most recent past one
+    if (nearest == null) {
+      for (const h of hours) {
+        const diff = currentHour - h;
+        if (diff >= 0 && diff < Math.abs(nearestDiff)) {
+          nearestDiff = -diff;
+          nearest = h;
+        }
+      }
+    }
+    if (nearest == null) return formatTimeSince(habit.lastCompleted, habit.totalCompletions);
+    const diff = nearest - currentHour;
+    const absDiff = Math.abs(diff);
+    if (absDiff < 0.5) return 'now';
+    const rounded = Math.round(absDiff);
+    if (diff > 0) return `in ${rounded}h`;
+    return `${rounded}h late`;
+  };
+
   return (
-    <div className="group py-2">
+    <div
+      className={`group py-2 relative transition-colors duration-150 ${isTimelineHighlighted ? 'bg-tokyo-blue-bg rounded' : ''}`}
+      onMouseEnter={() => onHoverTimeline?.(habit.id)}
+      onMouseLeave={() => onHoverTimeline?.(null)}
+    >
       <div className="flex items-start gap-2.5">
         {!editMode && (
           <>
@@ -315,7 +362,19 @@ export function HabitItem({
                   >
                     {habit.text}
                   </span>
-                  {!editMode && <span className="text-tokyo-yellow ml-1.5">• {formatTimeSince(habit.lastCompleted, habit.totalCompletions)}</span>}
+                  {!editMode && (
+                    <>
+                      <span className="text-tokyo-yellow ml-1.5">• {getTimeLabel()}</span>
+                      {isDue && !isResting && getTimeLabel().includes('late') && (
+                        <button
+                          onClick={(e) => { e.stopPropagation(); onToggle(habit.id, 'skip'); }}
+                          className="text-transparent group-hover:text-tokyo-red text-xs ml-1.5 transition-colors"
+                        >
+                          skip
+                        </button>
+                      )}
+                    </>
+                  )}
                   {editMode && (
                     <span
                       onClick={handleStartEditingInterval}
@@ -535,7 +594,7 @@ export function HabitItem({
               onClick={() => {
                 onSetRevealed(null);
                 setNewNoteText('');
-                setEditingNoteIndex(null);
+                setEditingNoteId(null);
               }}
               className="text-xs text-tokyo-text-dim hover:text-tokyo-text-muted"
             >
@@ -544,7 +603,15 @@ export function HabitItem({
           </div>
           {habit.notes && habit.notes.length > 0 && (
             <div className="space-y-2 mb-3">
-              {habit.notes.map((note, i) => (
+              {habit.notes.length > 4 && !showAllNotes && (
+                <button
+                  onClick={() => setShowAllNotes(true)}
+                  className="text-xs text-tokyo-text-dim hover:text-tokyo-text-muted"
+                >
+                  show {habit.notes.length - 4} older...
+                </button>
+              )}
+              {(showAllNotes ? habit.notes : habit.notes.slice(-4)).map((note, i) => (
                 <div
                   key={note.id}
                   className="group/note text-sm text-tokyo-text px-3 py-2 border-l-2 border-tokyo-yellow"
@@ -556,7 +623,7 @@ export function HabitItem({
                     <div className="flex gap-1 opacity-0 group-hover/note:opacity-100 transition-opacity flex-shrink-0">
                       <button
                         onClick={() => {
-                          setEditingNoteIndex(i);
+                          setEditingNoteId(note.id);
                           setEditingNoteText(note.text);
                         }}
                         className="text-[10px] text-tokyo-text-dim hover:text-tokyo-text-muted"
@@ -572,7 +639,7 @@ export function HabitItem({
                       </button>
                     </div>
                   </div>
-                  {editingNoteIndex === i ? (
+                  {editingNoteId === note.id ? (
                     <div className="mt-1">
                       <textarea
                         value={editingNoteText}
@@ -583,7 +650,7 @@ export function HabitItem({
                       />
                       <div className="flex justify-end gap-2 mt-1">
                         <button
-                          onClick={() => setEditingNoteIndex(null)}
+                          onClick={() => setEditingNoteId(null)}
                           className="px-3 py-1 text-xs text-tokyo-text-muted hover:text-tokyo-text"
                         >
                           Cancel
@@ -593,7 +660,7 @@ export function HabitItem({
                             if (editingNoteText.trim()) {
                               onEditNote(habit.id, note.id, editingNoteText.trim());
                             }
-                            setEditingNoteIndex(null);
+                            setEditingNoteId(null);
                           }}
                           className="px-3 py-1 text-xs bg-tokyo-blue text-white rounded-lg hover:bg-tokyo-blue-hover transition-colors"
                         >

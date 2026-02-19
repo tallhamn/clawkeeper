@@ -1,11 +1,37 @@
 import { useState, useEffect, useRef } from 'react';
 import type { Habit } from '@clawkeeper/shared/src/types';
 import { isHabitAvailable, formatTimeSince } from '@clawkeeper/shared/src/utils';
+import { getHabitMarkerHours } from '@/components/HabitTimeline';
 import { sendMessage } from '@/lib/claude';
 
 interface LastAction {
   text: string;
   totalCompletions: number;
+}
+
+function getTimeOfDay(hour: number): string {
+  if (hour < 6) return 'early morning';
+  if (hour < 12) return 'morning';
+  if (hour < 14) return 'midday';
+  if (hour < 17) return 'afternoon';
+  if (hour < 21) return 'evening';
+  return 'night';
+}
+
+function getNextScheduled(habit: Habit, currentHour: number): number | null {
+  const hours = getHabitMarkerHours(habit);
+  if (hours.length === 0) return null;
+  // Find nearest future slot
+  let best: number | null = null;
+  let bestDiff = Infinity;
+  for (const h of hours) {
+    const diff = h - currentHour;
+    if (diff > 0 && diff < bestDiff) {
+      bestDiff = diff;
+      best = h;
+    }
+  }
+  return best;
 }
 
 export function useCoachMessage(habits: Habit[], currentHour: number) {
@@ -33,45 +59,81 @@ export function useCoachMessage(habits: Habit[], currentHour: number) {
       setIsGenerating(true);
       lastGeneratedRef.current = now;
 
-      // Build context about habits
-      const availableHabits = habits.filter((h) => isHabitAvailable(h.lastCompleted, h.repeatIntervalHours));
-      const completedCount = habits.filter((h) =>
-        h.lastCompleted &&
-        (Date.now() - new Date(h.lastCompleted).getTime()) < (h.repeatIntervalHours * 60 * 60 * 1000)
-      ).length;
+      // Build rich time-aware context
+      const availableHabits = habits.filter((h) => isHabitAvailable(h.lastCompleted, h.repeatIntervalHours, h.forcedAvailable));
+      const restingHabits = habits.filter((h) => !isHabitAvailable(h.lastCompleted, h.repeatIntervalHours, h.forcedAvailable));
+
+      // Find the most urgent available habit (closest preferred hour to now, or overdue)
+      const overdueHabits = availableHabits.filter((h) => {
+        if (h.preferredHour == null) return false;
+        const hours = getHabitMarkerHours(h);
+        return hours.some((hr) => hr < currentHour);
+      });
+
+      // Find next upcoming habit
+      let nextHabit: { habit: Habit; inHours: number } | null = null;
+      for (const h of availableHabits) {
+        const next = getNextScheduled(h, currentHour);
+        if (next != null) {
+          const diff = next - currentHour;
+          if (!nextHabit || diff < nextHabit.inHours) {
+            nextHabit = { habit: h, inHours: Math.round(diff) };
+          }
+        }
+      }
 
       const habitContext = habits.map((h) => {
-        const available = isHabitAvailable(h.lastCompleted, h.repeatIntervalHours);
-        const timeSince = h.lastCompleted ? formatTimeSince(h.lastCompleted) : 'never';
-        return `- ${h.text}: ${available ? 'available' : `done ${timeSince}`}, ${h.totalCompletions}x total`;
+        const available = isHabitAvailable(h.lastCompleted, h.repeatIntervalHours, h.forcedAvailable);
+        const timeSince = h.lastCompleted ? formatTimeSince(h.lastCompleted) : 'never done';
+        const scheduledAt = h.preferredHour != null ? `scheduled ${h.preferredHour}:00` : 'no set time';
+        return `- ${h.text} (${scheduledAt}): ${available ? 'AVAILABLE' : 'resting'}, ${timeSince}, ${h.totalCompletions}x lifetime`;
       }).join('\n');
 
-      const prompt = `Generate a very brief (1 sentence, max 12 words), encouraging status message about the user's habits. Be specific and direct. Don't use emojis.
+      const timeContext = [
+        `Time: ${currentHour}:00 (${getTimeOfDay(currentHour)})`,
+        `Progress: ${restingHabits.length}/${habits.length} completed recently`,
+        `Available now: ${availableHabits.length}`,
+        overdueHabits.length > 0 ? `Overdue: ${overdueHabits.map((h) => h.text).join(', ')}` : null,
+        nextHabit ? `Next scheduled: "${nextHabit.habit.text}" in ~${nextHabit.inHours}h` : null,
+        availableHabits.length === 0 ? 'All habits resting — nothing to do right now' : null,
+      ].filter(Boolean).join('\n');
+
+      const prompt = `You are a concise personal coach. Generate ONE brief sentence (max 15 words) about the user's habit status right now.
+
+Context:
+${timeContext}
 
 Habits:
 ${habitContext}
 
-Stats: ${completedCount}/${habits.length} done
-Available: ${availableHabits.length}
+Rules:
+- Reference specific habit names and timing ("evening walk is in 2h", not "you have habits pending")
+- If something is overdue, mention it gently ("morning run was scheduled earlier — still time")
+- If everything is done, acknowledge it ("clear until evening walk at 6pm")
+- If the next habit is soon, highlight it ("water is up next in 1h")
+- Don't list all habits. Focus on what's most relevant RIGHT NOW
+- No emojis, no exclamation marks, no generic encouragement
+- Be conversational and specific, like a friend glancing at your schedule
 
-Examples of good messages:
-- "write code is ready when you are"
-- "4/4 habits completed on schedule"
-- "light workout available, keep the streak going"
-- "All done for now"
-
-Generate one brief message:`;
+Generate one message:`;
 
       const response = await sendMessage(prompt, [], [], currentHour, []);
-      setMessage(response.trim());
+      setMessage(response.trim().replace(/^["']|["']$/g, ''));
     } catch (error) {
       console.error('Failed to generate coach message:', error);
-      // Fallback to simple message
-      const availableHabits = habits.filter((h) => isHabitAvailable(h.lastCompleted, h.repeatIntervalHours));
-      if (availableHabits.length > 0) {
-        setMessage(`${availableHabits[0].text} is ready when you are.`);
+      // Fallback: time-aware static message
+      const availableHabits = habits.filter((h) => isHabitAvailable(h.lastCompleted, h.repeatIntervalHours, h.forcedAvailable));
+      if (availableHabits.length === 0) {
+        setMessage('All habits resting — nothing due right now.');
       } else {
-        setMessage('All habits complete for now.');
+        const next = availableHabits[0];
+        const nextTime = getNextScheduled(next, currentHour);
+        if (nextTime != null) {
+          const diff = Math.round(nextTime - currentHour);
+          setMessage(`${next.text} ${diff > 0 ? `coming up in ${diff}h` : 'is ready now'}.`);
+        } else {
+          setMessage(`${next.text} is ready when you are.`);
+        }
       }
     } finally {
       setIsGenerating(false);
@@ -79,7 +141,7 @@ Generate one brief message:`;
   };
 
   useEffect(() => {
-    const completedCount = habits.filter((h) =>
+    const restingCount = habits.filter((h) =>
       h.lastCompleted &&
       (Date.now() - new Date(h.lastCompleted).getTime()) < (h.repeatIntervalHours * 60 * 60 * 1000)
     ).length;
@@ -89,7 +151,7 @@ Generate one brief message:`;
       // Reinforcing mode - instant feedback
       const messages = [
         `${lastAction.text} done. ${lastAction.totalCompletions}x completed.`,
-        `${completedCount}/${total} complete.`,
+        `${restingCount}/${total} complete.`,
         `Nice. ${lastAction.text} checked off.`,
       ];
       setMessage(messages[Math.floor(Math.random() * messages.length)]);

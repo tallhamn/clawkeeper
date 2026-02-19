@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import type { Habit } from '@clawkeeper/shared/src/types';
+import { sortHabitQueue } from '@clawkeeper/shared/src/utils';
 import { HabitItem } from './HabitItem';
+import { HabitTimeline } from './HabitTimeline';
 import { AddHabitRow } from './AddHabitRow';
 
 interface HabitsSectionProps {
@@ -8,7 +10,7 @@ interface HabitsSectionProps {
   currentHour: number;
   searchQuery: string;
   showCompleted: boolean;
-  onToggle: (id: string) => void;
+  onToggle: (id: string, action?: 'complete' | 'undo' | 'wakeup' | 'skip') => void;
   onDelete: (id: string) => void;
   onUpdateInterval: (id: string, intervalHours: number) => void;
   onUpdateText: (id: string, text: string) => void;
@@ -22,7 +24,7 @@ interface HabitsSectionProps {
 
 export function HabitsSection({
   habits,
-  currentHour: _currentHour,
+  currentHour,
   searchQuery,
   showCompleted: _showCompleted,
   onToggle,
@@ -37,15 +39,18 @@ export function HabitsSection({
   onSetRevealed,
 }: HabitsSectionProps) {
   const [isAdding, setIsAdding] = useState(false);
-  const [editMode, setEditMode] = useState(false);
+  const [hoveredHabitId, setHoveredHabitId] = useState<string | null>(null);
 
-  // Filter habits by search query
-  const filteredHabits = habits.filter((habit) => {
-    if (!searchQuery) return true;
-    const lowerQuery = searchQuery.toLowerCase();
-    return habit.text.toLowerCase().includes(lowerQuery) ||
-           (habit.notes && habit.notes.some((n) => n.text.toLowerCase().includes(lowerQuery)));
-  });
+  // Filter habits by search query, then sort by priority queue
+  const filteredHabits = sortHabitQueue(
+    habits.filter((habit) => {
+      if (!searchQuery) return true;
+      const lowerQuery = searchQuery.toLowerCase();
+      return habit.text.toLowerCase().includes(lowerQuery) ||
+             (habit.notes && habit.notes.some((n) => n.text.toLowerCase().includes(lowerQuery)));
+    }),
+    currentHour
+  );
 
   const handleAddHabit = (text: string, intervalHours: number) => {
     onAddHabit(text, intervalHours);
@@ -58,12 +63,6 @@ export function HabitsSection({
         <span className="text-xs font-semibold text-tokyo-magenta uppercase tracking-wider">Habits</span>
         <div className="flex items-center gap-3">
           <button
-            onClick={() => setEditMode(!editMode)}
-            className="text-xs text-tokyo-cyan hover:text-tokyo-text transition-colors"
-          >
-            {editMode ? 'Done' : 'Edit'}
-          </button>
-          <button
             onClick={() => setIsAdding(true)}
             className="text-sm text-tokyo-green hover:text-tokyo-text transition-colors"
           >
@@ -71,6 +70,7 @@ export function HabitsSection({
           </button>
         </div>
       </div>
+      <HabitTimeline habits={habits} currentHour={currentHour} highlightHabitId={hoveredHabitId} onHoverHabit={setHoveredHabitId} />
       {isAdding && (
         <AddHabitRow
           onAdd={handleAddHabit}
@@ -84,7 +84,9 @@ export function HabitsSection({
               <HabitItem
                 key={habit.id}
                 habit={habit}
-                editMode={editMode}
+                editMode={false}
+                isTimelineHighlighted={hoveredHabitId === habit.id}
+                onHoverTimeline={setHoveredHabitId}
                 onToggle={onToggle}
                 onDelete={onDelete}
                 onUpdateInterval={onUpdateInterval}

@@ -225,6 +225,214 @@ The user will see approval buttons and can choose to apply your suggestions.
 }
 
 /**
+ * Infer the ideal hour of day (0-23) for a list of habit names.
+ * Returns a map of habit name → preferred hour.
+ * Uses OpenClaw if available, otherwise falls back to Anthropic.
+ */
+export async function inferPreferredHours(
+  habitNames: string[]
+): Promise<Record<string, number>> {
+  if (habitNames.length === 0) return {};
+
+  const prompt = `Given these habit names, return a JSON object mapping each habit name to the ideal hour of day (0-23) when someone would typically do it. Consider the habit name for time-of-day clues (e.g. "morning run" → 7, "evening meditation" → 20). If there's no time hint, use a reasonable default for that type of activity. Return ONLY valid JSON, no explanation.
+
+Habits: ${JSON.stringify(habitNames)}`;
+
+  let responseText: string;
+
+  if (isOpenClawAvailable()) {
+    try {
+      responseText = await sendViaOpenClaw(
+        'You are a helpful assistant. Return only valid JSON.',
+        [{ role: 'user', content: prompt }]
+      );
+    } catch (error) {
+      console.warn('[inferPreferredHours] OpenClaw failed, trying Anthropic:', error);
+      resetOpenClawStatus();
+      notifyProviderChange();
+      if (!anthropic) return {};
+      const res = await anthropic.messages.create({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 512,
+        messages: [{ role: 'user', content: prompt }],
+      });
+      const textBlock = res.content.find(
+        (b): b is Anthropic.TextBlock => b.type === 'text'
+      );
+      responseText = textBlock?.text ?? '{}';
+    }
+  } else if (anthropic) {
+    const res = await anthropic.messages.create({
+      model: 'claude-sonnet-4-20250514',
+      max_tokens: 512,
+      messages: [{ role: 'user', content: prompt }],
+    });
+    const textBlock = res.content.find(
+      (b): b is Anthropic.TextBlock => b.type === 'text'
+    );
+    responseText = textBlock?.text ?? '{}';
+  } else {
+    return {};
+  }
+
+  // Extract JSON from response (may be wrapped in markdown code fences)
+  const jsonMatch = responseText.match(/\{[\s\S]*\}/);
+  if (!jsonMatch) return {};
+
+  try {
+    const parsed = JSON.parse(jsonMatch[0]);
+    // Build case-insensitive lookup from LLM response
+    const lowerMap = new Map<string, number>();
+    for (const [key, val] of Object.entries(parsed)) {
+      if (typeof val === 'number' && val >= 0 && val <= 23) {
+        lowerMap.set(key.toLowerCase(), Math.round(val));
+      }
+    }
+    const result: Record<string, number> = {};
+    for (const name of habitNames) {
+      const val = parsed[name] ?? lowerMap.get(name.toLowerCase());
+      if (typeof val === 'number' && val >= 0 && val <= 23) {
+        result[name] = Math.round(val);
+      }
+    }
+    return result;
+  } catch (error) {
+    console.warn('[inferPreferredHours] Failed to parse response:', error);
+    return {};
+  }
+}
+
+// Keyword → emoji fallback for when the LLM doesn't return a match
+const ICON_KEYWORDS: [RegExp, string][] = [
+  [/water|drink|hydrat/i, '💧'],
+  [/run|jog|sprint/i, '🏃'],
+  [/walk/i, '🚶'],
+  [/read|book/i, '📖'],
+  [/meditat|mindful|breath/i, '🧘'],
+  [/code|program|dev/i, '💻'],
+  [/write|journal|diary/i, '✍️'],
+  [/gym|workout|exercise|lift|strength/i, '🏋️'],
+  [/yoga|stretch/i, '🧘'],
+  [/sleep|bed|rest|nap/i, '😴'],
+  [/cook|meal|food|eat/i, '🍳'],
+  [/clean|tidy|chore/i, '🧹'],
+  [/vitamin|supplement|medicine|pill/i, '💊'],
+  [/taekwondo|karate|martial|fight|boxing/i, '🥋'],
+  [/swim/i, '🏊'],
+  [/bike|cycl/i, '🚴'],
+  [/music|guitar|piano|instrument|practice/i, '🎵'],
+  [/study|learn|homework/i, '📚'],
+  [/pray|church|spirit|worship/i, '🙏'],
+  [/volunteer|service|help|kindness|give/i, '🤝'],
+  [/call|phone|contact/i, '📞'],
+  [/email|inbox/i, '📧'],
+  [/plant|garden|water.*plant/i, '🌱'],
+  [/dog|pet|walk.*dog/i, '🐕'],
+  [/cat/i, '🐈'],
+  [/skin|face|moistur|sunscreen/i, '🧴'],
+  [/teeth|brush|floss|dental/i, '🪥'],
+  [/shower|bath|hygiene/i, '🚿'],
+  [/idea|startup|business|project/i, '💡'],
+  [/gratitude|thankful|grateful/i, '🙏'],
+  [/reflect|review|evening/i, '🌇'],
+  [/morning|wake|sunrise/i, '🌅'],
+];
+
+function fallbackIcon(name: string): string {
+  for (const [pattern, emoji] of ICON_KEYWORDS) {
+    if (pattern.test(name)) return emoji;
+  }
+  return '◆';
+}
+
+/**
+ * Infer a single emoji icon for each habit name.
+ * Returns a map of habit name → emoji string.
+ * Falls back to keyword matching, then a generic icon.
+ */
+export async function inferHabitIcons(
+  habitNames: string[]
+): Promise<Record<string, string>> {
+  if (habitNames.length === 0) return {};
+
+  const prompt = `Given these habit names, return a JSON object where each key is the EXACT habit name and the value is a single emoji. Use the EXACT strings as keys — do not rephrase or shorten them. Pick specific, recognizable emoji.
+
+Habits: ${JSON.stringify(habitNames)}
+
+Return ONLY valid JSON, no explanation.`;
+
+  let responseText: string | null = null;
+
+  try {
+    if (isOpenClawAvailable()) {
+      try {
+        responseText = await sendViaOpenClaw(
+          'You are a helpful assistant. Return only valid JSON.',
+          [{ role: 'user', content: prompt }]
+        );
+      } catch (error) {
+        console.warn('[inferHabitIcons] OpenClaw failed, trying Anthropic:', error);
+        resetOpenClawStatus();
+        notifyProviderChange();
+        if (anthropic) {
+          const res = await anthropic.messages.create({
+            model: 'claude-sonnet-4-20250514',
+            max_tokens: 1024,
+            messages: [{ role: 'user', content: prompt }],
+          });
+          const textBlock = res.content.find(
+            (b): b is Anthropic.TextBlock => b.type === 'text'
+          );
+          responseText = textBlock?.text ?? null;
+        }
+      }
+    } else if (anthropic) {
+      const res = await anthropic.messages.create({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 1024,
+        messages: [{ role: 'user', content: prompt }],
+      });
+      const textBlock = res.content.find(
+        (b): b is Anthropic.TextBlock => b.type === 'text'
+      );
+      responseText = textBlock?.text ?? null;
+    }
+  } catch (error) {
+    console.warn('[inferHabitIcons] LLM call failed:', error);
+  }
+
+  // Parse LLM response into a case-insensitive lookup
+  const lowerMap = new Map<string, string>();
+  if (responseText) {
+    const jsonMatch = responseText.match(/\{[\s\S]*\}/);
+    if (jsonMatch) {
+      try {
+        const parsed = JSON.parse(jsonMatch[0]);
+        for (const [key, val] of Object.entries(parsed)) {
+          if (typeof val === 'string' && val.length > 0) {
+            lowerMap.set(key.toLowerCase(), val);
+          }
+        }
+      } catch (error) {
+        console.warn('[inferHabitIcons] Failed to parse response:', error);
+      }
+    }
+  }
+
+  // Build result: LLM match → keyword fallback → generic icon
+  const result: Record<string, string> = {};
+  for (const name of habitNames) {
+    const llmVal = lowerMap.get(name.toLowerCase());
+    if (typeof llmVal === 'string' && llmVal.length > 0) {
+      result[name] = llmVal;
+    } else {
+      result[name] = fallbackIcon(name);
+    }
+  }
+  return result;
+}
+
+/**
  * Send a message to Claude and get a response
  */
 export async function sendMessage(

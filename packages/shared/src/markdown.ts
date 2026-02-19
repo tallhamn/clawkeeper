@@ -55,6 +55,20 @@ export function serializeToMarkdown(habits: Habit[], tasks: Task[]): string {
     md += `- Interval: ${habit.repeatIntervalHours}h\n`;
     md += `- Total Completions: ${habit.totalCompletions}\n`;
     md += `- Last completed: ${habit.lastCompleted || 'never'}\n`;
+    if (habit.preferredHour != null) {
+      md += `- Preferred hour: ${habit.preferredHour}\n`;
+    }
+    if (habit.icon) {
+      md += `- Icon: ${habit.icon}\n`;
+    }
+    if (habit.completionHistory && habit.completionHistory.length > 0) {
+      // Only persist completions from the last 48 hours
+      const cutoff = Date.now() - 48 * 60 * 60 * 1000;
+      const recent = habit.completionHistory.filter((ts) => new Date(ts).getTime() > cutoff);
+      if (recent.length > 0) {
+        md += `- Completions: ${recent.join(', ')}\n`;
+      }
+    }
     if (habit.notes && habit.notes.length > 0) {
       habit.notes.forEach((n) => {
         md += `| [${n.createdAt}] ${n.text} <!-- nid:${n.id} -->\n`;
@@ -144,6 +158,7 @@ export function parseMarkdown(md: string): AppState {
           repeatIntervalHours: 24,
           totalCompletions: 0,
           lastCompleted: null,
+          completionHistory: [],
           notes: [],
         };
       } else if (currentHabit) {
@@ -157,6 +172,19 @@ export function parseMarkdown(md: string): AppState {
         } else if (line.startsWith('- Last completed: ')) {
           const value = line.slice(18);
           currentHabit.lastCompleted = value === 'never' ? null : value;
+        } else if (line.startsWith('- Preferred hour: ')) {
+          const val = parseInt(line.slice(18));
+          if (!isNaN(val) && val >= 0 && val <= 23) {
+            currentHabit.preferredHour = val;
+          }
+        } else if (line.startsWith('- Icon: ')) {
+          const icon = line.slice(8).trim();
+          if (icon.length > 0) {
+            currentHabit.icon = icon;
+          }
+        } else if (line.startsWith('- Completions: ')) {
+          const timestamps = line.slice(15).split(', ').map((s) => s.trim()).filter(Boolean);
+          currentHabit.completionHistory = timestamps;
         } else if (line === '- Reflections:') {
           continue;
         } else if (line.startsWith('  - ')) {
