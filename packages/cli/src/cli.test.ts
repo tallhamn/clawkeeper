@@ -9,9 +9,10 @@ const PROJECT_ROOT = join(__dirname, '..');
 
 function cli(args: string[], home: string): { ok: boolean; data?: any; error?: string } {
   try {
+    const { CLAWKEEPER_DIR: _, ...cleanEnv } = process.env;
     const stdout = execFileSync('npx', ['tsx', CLI_PATH, ...args], {
       cwd: PROJECT_ROOT,
-      env: { ...process.env, HOME: home },
+      env: { ...cleanEnv, HOME: home },
       encoding: 'utf-8',
       timeout: 15000,
     });
