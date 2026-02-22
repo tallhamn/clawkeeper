@@ -1,0 +1,309 @@
+import { useState } from 'react';
+import type { Task } from '@clawkeeper/shared/src/types';
+import { getDueDateStatus, formatDueDate } from '@clawkeeper/shared/src/utils';
+
+type RevealedItem = { type: 'habit' | 'task'; id: string; mode: 'reflection' | 'edit' | 'add-subtask' | 'notes' } | null;
+
+interface TaskItemProps {
+  task: Task;
+  depth: number;
+  showCompleted: boolean;
+  onToggle: (id: string) => void;
+  onAddNote: (id: string, text: string) => void;
+  onAddSubtask: (parentId: string, text: string) => void;
+  onDelete: (id: string) => void;
+  onUpdateText: (id: string, text: string) => void;
+  onUpdateDueDate: (id: string, dueDate: string | null) => void;
+  revealedItem: RevealedItem;
+  onSetRevealed: (item: RevealedItem) => void;
+}
+
+export function TaskItem({
+  task,
+  depth,
+  showCompleted,
+  onToggle,
+  onAddNote,
+  onAddSubtask,
+  onDelete,
+  onUpdateText,
+  onUpdateDueDate,
+  revealedItem,
+  onSetRevealed,
+}: TaskItemProps) {
+  const [subtaskText, setSubtaskText] = useState('');
+  const [noteText, setNoteText] = useState('');
+  const [isEditingText, setIsEditingText] = useState(false);
+  const [editText, setEditText] = useState(task.text);
+
+  const showAddSubtask = revealedItem?.type === 'task' && revealedItem?.id === task.id && revealedItem?.mode === 'add-subtask';
+  const showNotes = revealedItem?.type === 'task' && revealedItem?.id === task.id && revealedItem?.mode === 'notes';
+  const isExpanded = revealedItem?.type === 'task' && revealedItem?.id === task.id && revealedItem?.mode === 'edit';
+
+  const visibleChildren = showCompleted
+    ? task.children
+    : task.children?.filter((child) => !child.completed) || [];
+
+  if (!showCompleted && task.completed && visibleChildren.length === 0) {
+    return null;
+  }
+
+  const handleToggle = () => {
+    onToggle(task.id);
+  };
+
+  const handleAddSubtask = () => {
+    if (subtaskText.trim()) {
+      onAddSubtask(task.id, subtaskText.trim());
+      setSubtaskText('');
+      onSetRevealed(null);
+    }
+  };
+
+  const handleSaveNote = () => {
+    if (noteText.trim()) {
+      onAddNote(task.id, noteText.trim());
+      setNoteText('');
+    }
+  };
+
+  const handleSaveText = () => {
+    if (editText.trim()) {
+      onUpdateText(task.id, editText.trim());
+    }
+    setIsEditingText(false);
+  };
+
+  return (
+    <div className={`${depth > 0 ? 'ml-2.5 pl-5 border-l-2 border-l-tokyo-border' : ''}`}>
+      <div className={`group py-2.5 ${task.completed ? 'opacity-40' : ''}`}>
+        <div className="flex items-start gap-2.5">
+          <button
+            onClick={handleToggle}
+            className={`mt-0.5 w-6 h-6 rounded border-2 flex items-center justify-center transition-all flex-shrink-0
+              ${task.completed
+                ? 'bg-tokyo-green border-tokyo-green text-white'
+                : 'border-tokyo-blue/40 active:border-tokyo-blue'
+              }`}
+          >
+            {task.completed && (
+              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+              </svg>
+            )}
+          </button>
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2">
+              <div className="flex-1">
+                {isEditingText ? (
+                  <input
+                    type="text"
+                    value={editText}
+                    onChange={(e) => setEditText(e.target.value)}
+                    onBlur={handleSaveText}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') handleSaveText();
+                      if (e.key === 'Escape') { setEditText(task.text); setIsEditingText(false); }
+                    }}
+                    className="w-full px-3 py-2 bg-tokyo-surface-alt border border-tokyo-border rounded-lg focus:outline-none focus:ring-1 focus:ring-tokyo-blue text-sm"
+                    autoFocus
+                  />
+                ) : (
+                  <span className="inline-flex items-center gap-1.5 flex-wrap">
+                    <span
+                      onClick={() => {
+                        if (showNotes) onSetRevealed(null);
+                        else onSetRevealed({ type: 'task', id: task.id, mode: 'notes' });
+                      }}
+                      className={`text-sm text-tokyo-text-bright ${task.completed ? 'line-through text-tokyo-text-muted' : ''} cursor-pointer active:text-tokyo-blue`}
+                    >
+                      {task.text}
+                    </span>
+                    {!task.completed && task.dueDate && (() => {
+                      const status = getDueDateStatus(task.dueDate);
+                      const label = formatDueDate(task.dueDate);
+                      const colorClass =
+                        status === 'overdue' ? 'text-tokyo-red bg-tokyo-red/10' :
+                        status === 'due-today' ? 'text-tokyo-yellow bg-tokyo-yellow/10' :
+                        status === 'upcoming' ? 'text-tokyo-cyan bg-tokyo-cyan/10' :
+                        'text-tokyo-text-dim bg-tokyo-surface-alt';
+                      return (
+                        <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded ${colorClass}`}>
+                          {label}
+                        </span>
+                      );
+                    })()}
+                  </span>
+                )}
+              </div>
+
+              {/* Action buttons — always visible on mobile */}
+              {!task.completed && (
+                <>
+                  <button
+                    onClick={() => onSetRevealed({ type: 'task', id: task.id, mode: 'add-subtask' })}
+                    className="p-1.5 text-tokyo-text-dim active:text-tokyo-text-muted rounded flex-shrink-0"
+                    title="Add subtask"
+                  >
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+                    </svg>
+                  </button>
+                  <button
+                    onClick={() => onSetRevealed({ type: 'task', id: task.id, mode: 'notes' })}
+                    className={`relative p-1.5 text-tokyo-text-dim active:text-tokyo-text-muted rounded flex-shrink-0`}
+                    title="Notes"
+                  >
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                    </svg>
+                    {task.notes && task.notes.length > 0 && (
+                      <span className="absolute -top-1 -right-1 w-3.5 h-3.5 bg-tokyo-yellow text-tokyo-bg text-[9px] font-bold rounded-full flex items-center justify-center">
+                        {task.notes.length}
+                      </span>
+                    )}
+                  </button>
+                  <button
+                    onClick={() => onSetRevealed(isExpanded ? null : { type: 'task', id: task.id, mode: 'edit' })}
+                    className="p-1.5 text-tokyo-text-dim active:text-tokyo-text-muted rounded flex-shrink-0"
+                    title="Edit task"
+                  >
+                    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                      <circle cx="12" cy="5" r="2" />
+                      <circle cx="12" cy="12" r="2" />
+                      <circle cx="12" cy="19" r="2" />
+                    </svg>
+                  </button>
+                </>
+              )}
+            </div>
+
+            {/* Edit panel */}
+            {isExpanded && (
+              <div className="flex items-center gap-2 mt-1 flex-wrap">
+                <button onClick={() => setIsEditingText(true)} className="text-xs text-tokyo-cyan active:text-tokyo-text">
+                  Edit name
+                </button>
+                <span className="text-tokyo-text-dim">{'\u00B7'}</span>
+                <label className="text-xs text-tokyo-cyan active:text-tokyo-text cursor-pointer">
+                  {task.dueDate ? 'Change due date' : 'Set due date'}
+                  <input
+                    type="date"
+                    className="sr-only"
+                    value={task.dueDate || ''}
+                    onChange={(e) => onUpdateDueDate(task.id, e.target.value || null)}
+                  />
+                </label>
+                {task.dueDate && (
+                  <>
+                    <span className="text-tokyo-text-dim">{'\u00B7'}</span>
+                    <button onClick={() => onUpdateDueDate(task.id, null)} className="text-xs text-tokyo-text-muted active:text-tokyo-text">
+                      Clear due date
+                    </button>
+                  </>
+                )}
+                <span className="text-tokyo-text-dim">{'\u00B7'}</span>
+                <button onClick={() => onDelete(task.id)} className="text-xs text-tokyo-red active:text-tokyo-red/80">
+                  Delete
+                </button>
+                <span className="text-tokyo-text-dim">{'\u00B7'}</span>
+                <button onClick={() => onSetRevealed(null)} className="text-xs text-tokyo-text-muted active:text-tokyo-text">
+                  Done
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Add subtask input */}
+        {showAddSubtask && (
+          <div className="mt-2 ml-6 flex gap-2">
+            <input
+              type="text"
+              value={subtaskText}
+              onChange={(e) => setSubtaskText(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') handleAddSubtask();
+                if (e.key === 'Escape') { setSubtaskText(''); onSetRevealed(null); }
+              }}
+              placeholder="Subtask..."
+              className="flex-1 px-3 py-1.5 text-sm bg-tokyo-surface-alt border border-tokyo-border rounded-lg focus:outline-none focus:ring-1 focus:ring-tokyo-blue"
+              autoFocus
+            />
+            <button onClick={handleAddSubtask} className="px-3 py-1.5 text-xs bg-tokyo-blue text-white rounded-lg">
+              Add
+            </button>
+            <button
+              onClick={() => { setSubtaskText(''); onSetRevealed(null); }}
+              className="px-2 py-1.5 text-xs text-tokyo-text-muted"
+            >
+              Cancel
+            </button>
+          </div>
+        )}
+
+        {/* Notes panel */}
+        {showNotes && (
+          <div className="mt-2 ml-6 p-3 bg-tokyo-surface-alt rounded-lg border border-tokyo-border">
+            <div className="flex items-center justify-between mb-2">
+              <p className="text-xs text-tokyo-text-muted font-medium">Notes</p>
+              <button
+                onClick={() => { onSetRevealed(null); setNoteText(''); }}
+                className="text-xs text-tokyo-text-dim active:text-tokyo-text-muted"
+              >
+                Close
+              </button>
+            </div>
+            {task.notes && task.notes.length > 0 && (
+              <div className="space-y-2 mb-3">
+                {task.notes.map((note) => (
+                  <div key={note.id} className="text-sm text-tokyo-text px-3 py-2 border-l-2 border-tokyo-yellow">
+                    <span className="text-[10px] text-tokyo-text-dim block mb-0.5">
+                      {new Date(note.createdAt).toLocaleString()}
+                    </span>
+                    <span className="whitespace-pre-wrap">{note.text}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+            <div>
+              <textarea
+                value={noteText}
+                onChange={(e) => setNoteText(e.target.value)}
+                placeholder="Add a note..."
+                className="w-full px-3 py-2 text-sm bg-tokyo-surface-alt border border-tokyo-border rounded-lg focus:outline-none focus:ring-1 focus:ring-tokyo-blue resize-none"
+                rows={2}
+                autoFocus
+              />
+              {noteText.trim() && (
+                <div className="flex justify-end mt-2">
+                  <button onClick={handleSaveNote} className="px-4 py-2 text-xs bg-tokyo-blue text-white rounded-lg">
+                    Save
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Recursive render of children */}
+      {visibleChildren.map((child) => (
+        <TaskItem
+          key={child.id}
+          task={child}
+          depth={depth + 1}
+          showCompleted={showCompleted}
+          onToggle={onToggle}
+          onAddNote={onAddNote}
+          onAddSubtask={onAddSubtask}
+          onDelete={onDelete}
+          onUpdateText={onUpdateText}
+          onUpdateDueDate={onUpdateDueDate}
+          revealedItem={revealedItem}
+          onSetRevealed={onSetRevealed}
+        />
+      ))}
+    </div>
+  );
+}

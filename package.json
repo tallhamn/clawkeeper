@@ -11,6 +11,9 @@
     "dev": "npm run dev -w @clawkeeper/desktop",
     "tauri:dev": "npm run tauri:dev -w @clawkeeper/desktop",
     "tauri:build": "npm run tauri:build -w @clawkeeper/desktop",
-    "cli": "npm run cli -w clawkeeper"
+    "cli": "npm run cli -w clawkeeper",
+    "web:dev": "npm run dev -w @clawkeeper/web",
+    "web:build": "npm run build -w @clawkeeper/web",
+    "web:serve": "npm run serve -w @clawkeeper/web"
   }
 }

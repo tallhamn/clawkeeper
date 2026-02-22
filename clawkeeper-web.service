@@ -1,0 +1,23 @@
+[Unit]
+Description=ClawKeeper Web UI
+After=network-online.target openclaw-gateway.service
+BindsTo=openclaw-gateway.service
+
+[Service]
+Type=simple
+User=openclaw
+Group=clawkeeper
+WorkingDirectory=/opt/clawkeeper-web
+ExecStart=/usr/bin/npx tsx server.ts
+Restart=always
+RestartSec=5
+
+Environment=NODE_ENV=production
+Environment=CLAWKEEPER_DIR=/srv/clawkeeper
+Environment=PORT=3000
+
+ReadWritePaths=/srv/clawkeeper
+ReadOnlyPaths=/opt/clawkeeper-web
+
+[Install]
+WantedBy=openclaw-gateway.service

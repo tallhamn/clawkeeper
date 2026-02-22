@@ -1,0 +1,32 @@
+{
+  "name": "@clawkeeper/web",
+  "version": "0.2.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "concurrently -n api,vite -c blue,green \"tsx watch server.ts\" \"vite\"",
+    "build": "vite build",
+    "serve": "tsx server.ts",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@clawkeeper/shared": "*",
+    "clawkeeper": "*",
+    "express": "^4.21.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "@types/express": "^4.17.21",
+    "@types/react": "^18.3.12",
+    "@types/react-dom": "^18.3.1",
+    "@vitejs/plugin-react": "^4.3.4",
+    "autoprefixer": "^10.4.20",
+    "concurrently": "^9.1.0",
+    "postcss": "^8.4.49",
+    "tailwindcss": "^3.4.17",
+    "tsx": "^4.19.0",
+    "typescript": "^5.7.2",
+    "vite": "^6.0.5"
+  }
+}
