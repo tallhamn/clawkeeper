@@ -28,6 +28,7 @@ export interface Habit {
   forcedAvailable?: boolean; // If true, habit is available even if interval hasn't passed
   preferredHour?: number; // 0-23, ideal time of day inferred by LLM from habit name
   icon?: string; // Emoji icon inferred by LLM from habit name
+  agentId?: string; // ID of assigned OpenClaw agent
 }
 
 // Note model
@@ -46,6 +47,7 @@ export interface Task {
   dueDate: string | null;      // YYYY-MM-DD deadline
   notes: Note[];
   children: Task[];
+  agentId?: string; // ID of assigned OpenClaw agent (subtasks inherit from parent)
 }
 
 // Application state

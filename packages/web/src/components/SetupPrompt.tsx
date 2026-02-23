@@ -1,6 +1,4 @@
 import { useState, useEffect } from 'react';
-import { getActiveProvider, getProviderDisplayName, onProviderChange, providerReady } from '@/lib/claude';
-import type { Provider } from '@/lib/claude';
 
 const STORAGE_KEY = 'clawkeeper_setup_prompt_seen';
 
@@ -12,21 +10,27 @@ export function useSetupPrompt() {
   const [shouldShow, setShouldShow] = useState(false);
 
   useEffect(() => {
-    let cancelled = false;
-
-    providerReady.then(() => {
-      if (cancelled) return;
+    // Check if chat endpoint is available (OpenClaw configured server-side)
+    const check = async () => {
       try {
         const seen = localStorage.getItem(STORAGE_KEY);
-        if (!seen && getActiveProvider() === 'openclaw') {
+        if (seen) return;
+
+        // Probe the coach endpoint — if 503 then no OpenClaw
+        const res = await fetch('/api/coach-message', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ systemPrompt: 'test', messages: [] }),
+        });
+        // 503 means no token configured, anything else means it's available
+        if (res.status !== 503) {
           setShouldShow(true);
         }
       } catch {
-        // localStorage unavailable
+        // Endpoint not reachable
       }
-    });
-
-    return () => { cancelled = true; };
+    };
+    check();
   }, []);
 
   const dismiss = () => {
@@ -43,7 +47,6 @@ export function useSetupPrompt() {
 
 export function SetupPrompt({ onDismiss }: SetupPromptProps) {
   const [isVisible, setIsVisible] = useState(false);
-  const clawName = getProviderDisplayName();
 
   useEffect(() => {
     setTimeout(() => setIsVisible(true), 100);
@@ -69,13 +72,12 @@ export function SetupPrompt({ onDismiss }: SetupPromptProps) {
     >
       <div className="max-w-md mx-4 bg-tokyo-surface rounded-2xl p-6 shadow-xl border border-tokyo-border">
         <h2 className="text-lg font-semibold text-tokyo-blue mb-3">
-          {clawName} is here
+          AI coaching is available
         </h2>
 
         <p className="text-sm text-tokyo-text leading-relaxed mb-4">
-          ClawKeeper detected <span className="text-tokyo-cyan">{clawName}</span> running
-          on this machine. Want {clawName} to periodically check in on your habits and
-          offer support when things slip?
+          ClawKeeper can use AI to periodically check in on your habits and
+          offer support when things slip.
         </p>
 
         <ul className="text-xs text-tokyo-text-muted space-y-1.5 mb-6 ml-4">
@@ -96,13 +98,13 @@ export function SetupPrompt({ onDismiss }: SetupPromptProps) {
         <div className="flex gap-3">
           <button
             onClick={() => handleDismiss(true)}
-            className="flex-1 px-4 py-2 bg-tokyo-blue text-white text-sm font-medium rounded-lg hover:bg-tokyo-blue-hover transition-colors"
+            className="flex-1 px-4 py-2 bg-tokyo-blue text-white text-sm font-medium rounded-lg active:bg-tokyo-blue-hover transition-colors"
           >
             Enable check-ins
           </button>
           <button
             onClick={() => handleDismiss(false)}
-            className="flex-1 px-4 py-2 bg-tokyo-surface-alt text-tokyo-text-muted text-sm rounded-lg hover:text-tokyo-text transition-colors border border-tokyo-border"
+            className="flex-1 px-4 py-2 bg-tokyo-surface-alt text-tokyo-text-muted text-sm rounded-lg active:text-tokyo-text transition-colors border border-tokyo-border"
           >
             Not now
           </button>

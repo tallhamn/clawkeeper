@@ -61,6 +61,9 @@ export function serializeToMarkdown(habits: Habit[], tasks: Task[]): string {
     if (habit.icon) {
       md += `- Icon: ${habit.icon}\n`;
     }
+    if (habit.agentId) {
+      md += `- Agent: ${habit.agentId}\n`;
+    }
     if (habit.completionHistory && habit.completionHistory.length > 0) {
       // Only persist completions from the last 48 hours
       const cutoff = Date.now() - 48 * 60 * 60 * 1000;
@@ -102,6 +105,9 @@ export function serializeToMarkdown(habits: Habit[], tasks: Task[]): string {
     }
     if (task.dueDate) {
       md += `- Due: ${task.dueDate}\n`;
+    }
+    if (task.agentId) {
+      md += `- Agent: ${task.agentId}\n`;
     }
     if (task.notes && task.notes.length > 0) {
       task.notes.forEach((n) => {
@@ -182,6 +188,11 @@ export function parseMarkdown(md: string): AppState {
           if (icon.length > 0) {
             currentHabit.icon = icon;
           }
+        } else if (line.startsWith('- Agent: ')) {
+          const agentId = line.slice(9).trim();
+          if (agentId.length > 0) {
+            currentHabit.agentId = agentId;
+          }
         } else if (line.startsWith('- Completions: ')) {
           const timestamps = line.slice(15).split(', ').map((s) => s.trim()).filter(Boolean);
           currentHabit.completionHistory = timestamps;
@@ -221,6 +232,11 @@ export function parseMarkdown(md: string): AppState {
           const dueDateValue = line.slice(7).trim();
           if (dueDateValue.match(/^\d{4}-\d{2}-\d{2}$/)) {
             currentTask.dueDate = dueDateValue;
+          }
+        } else if (line.startsWith('- Agent: ')) {
+          const agentId = line.slice(9).trim();
+          if (agentId.length > 0) {
+            currentTask.agentId = agentId;
           }
         } else if (line.startsWith('> ') && taskStack.length === 1) {
           currentTask.notes.push({ id: generateId(), createdAt: '', text: line.slice(2) });

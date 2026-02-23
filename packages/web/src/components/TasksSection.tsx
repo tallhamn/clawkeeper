@@ -7,14 +7,18 @@ type RevealedItem = { type: 'habit' | 'task'; id: string; mode: 'reflection' | '
 
 interface TasksSectionProps {
   tasks: Task[];
+  searchQuery: string;
   showCompleted: boolean;
   onToggle: (id: string) => void;
   onAddNote: (id: string, text: string) => void;
+  onEditNote: (id: string, noteId: string, newNoteText: string) => void;
+  onDeleteNote: (id: string, noteId: string) => void;
   onAddSubtask: (parentId: string, text: string) => void;
   onAddTask: (text: string) => void;
   onDelete: (id: string) => void;
   onUpdateText: (id: string, text: string) => void;
   onUpdateDueDate: (id: string, dueDate: string | null) => void;
+  onUpdateAgent?: (id: string, agentId: string | null) => void;
   revealedItem: RevealedItem;
   onSetRevealed: (item: RevealedItem) => void;
   onToggleShowCompleted: () => void;
@@ -22,23 +26,38 @@ interface TasksSectionProps {
 
 export function TasksSection({
   tasks,
+  searchQuery,
   showCompleted,
   onToggle,
   onAddNote,
+  onEditNote,
+  onDeleteNote,
   onAddSubtask,
   onAddTask,
   onDelete,
   onUpdateText,
   onUpdateDueDate,
+  onUpdateAgent,
   revealedItem,
   onSetRevealed,
   onToggleShowCompleted,
 }: TasksSectionProps) {
   const [isAdding, setIsAdding] = useState(false);
 
+  const filterTasksBySearch = (task: Task, query: string): boolean => {
+    if (!query) return true;
+    const lowerQuery = query.toLowerCase();
+    if (task.text.toLowerCase().includes(lowerQuery)) return true;
+    if (task.notes && task.notes.some((n) => n.text.toLowerCase().includes(lowerQuery))) return true;
+    if (task.children && task.children.some((child) => filterTasksBySearch(child, query))) return true;
+    return false;
+  };
+
   const visibleTasks = tasks.filter((task) => {
     const hasIncomplete = !task.completed || (task.children && task.children.some((c) => !c.completed));
-    return showCompleted || hasIncomplete;
+    const passesCompletionFilter = showCompleted || hasIncomplete;
+    const passesSearchFilter = filterTasksBySearch(task, searchQuery);
+    return passesCompletionFilter && passesSearchFilter;
   });
 
   const handleAddTask = (text: string) => {
@@ -91,14 +110,21 @@ export function TasksSection({
               showCompleted={showCompleted}
               onToggle={onToggle}
               onAddNote={onAddNote}
+              onEditNote={onEditNote}
+              onDeleteNote={onDeleteNote}
               onAddSubtask={onAddSubtask}
               onDelete={onDelete}
               onUpdateText={onUpdateText}
               onUpdateDueDate={onUpdateDueDate}
+              onUpdateAgent={onUpdateAgent}
               revealedItem={revealedItem}
               onSetRevealed={onSetRevealed}
             />
           ))
+        ) : searchQuery ? (
+          <div className="py-8 text-center text-tokyo-text-dim text-sm">
+            No tasks matching "{searchQuery}"
+          </div>
         ) : showCompleted ? (
           <div className="py-8 text-center text-tokyo-text-dim text-sm">No tasks yet</div>
         ) : (

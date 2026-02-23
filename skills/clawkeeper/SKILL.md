@@ -51,11 +51,32 @@ clawkeeper habit delete-note --text "Meditate" --note "Felt calm today"
 
 ```bash
 clawkeeper state show
+clawkeeper state show --agent-id <id>
+```
+
+## Agent Assignment
+
+Assign an OpenClaw agent to specific habits or tasks. The agent-id is the agent's name in OpenClaw.
+
+```bash
+clawkeeper agent assign --agent-id <agent-name> --type habit --text "Pull-ups"
+clawkeeper agent assign --agent-id <agent-name> --type task --text "Ship v2"
+clawkeeper agent unassign --type habit --text "Pull-ups"
+```
+
+### Filtered Views
+
+Use `--agent-id` to see only items assigned to a specific agent:
+
+```bash
+clawkeeper state show --agent-id <agent-name>
+clawkeeper habit list --agent-id <agent-name>
+clawkeeper task list --agent-id <agent-name>
 ```
 
 ## Proactive Checks (Heartbeat)
 
-When running periodic checks, use `clawkeeper state show` to review the user's habits and tasks:
+When running periodic checks, use `clawkeeper state show` (or `--agent-id <agent-name>` for agent-specific views) to review the user's habits and tasks:
 
 - **Missed habits**: If a habit hasn't been completed for more than 2x its interval, ask about it gently. People forget — a nudge helps more than a lecture.
 - **Building streaks**: When a habit's completion count is climbing, acknowledge the momentum briefly.
