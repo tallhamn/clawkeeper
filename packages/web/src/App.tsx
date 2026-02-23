@@ -340,7 +340,7 @@ function App() {
                 onClick={() => setChatOpen(true)}
                 className="px-3 py-1.5 bg-tokyo-blue-bg text-tokyo-blue text-xs font-semibold rounded-lg active:text-tokyo-blue-hover transition-colors whitespace-nowrap"
               >
-                Plan
+                Chat
               </button>
             </div>
           </div>
@@ -410,6 +410,7 @@ function App() {
         tasks={state.tasks}
         currentHour={currentHour}
         onAction={handleLLMAction}
+        agents={agents}
       />
 
       {/* Undo Bar */}

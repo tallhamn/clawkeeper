@@ -60,12 +60,13 @@ export async function fetchAgents(): Promise<Array<{ id: string; name?: string }
 // AI actions
 export async function* streamChat(
   systemPrompt: string,
-  messages: Array<{ role: string; content: string }>
+  messages: Array<{ role: string; content: string }>,
+  agentId?: string
 ): AsyncGenerator<string, void, unknown> {
   const res = await fetch('/api/chat', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ systemPrompt, messages }),
+    body: JSON.stringify({ systemPrompt, messages, agentId }),
   });
 
   if (!res.ok) {

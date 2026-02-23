@@ -16,6 +16,7 @@ interface ChatPanelProps {
   tasks: Task[];
   currentHour: number;
   onAction: (action: LLMAction) => void;
+  agents: Array<{ id: string; name?: string }>;
 }
 
 let msgCounter = 0;
@@ -52,9 +53,7 @@ function generateSystemPrompt(habits: Habit[], tasks: Task[], currentHour: numbe
     h.lastCompleted && (Date.now() - new Date(h.lastCompleted).getTime()) < (h.repeatIntervalHours * 60 * 60 * 1000)
   ).length;
 
-  return `You are a productivity assistant helping the user plan their day and break down tasks.
-
-**Current Context:**
+  return `**Current Context:**
 - Time: ${currentHour}:00
 - Habits completed today: ${completedHabits}/${habits.length}
 
@@ -64,14 +63,8 @@ ${habitsSummary}
 **User's Tasks:**
 ${flattenTasks(tasks).join('\n')}
 
-**Your Role:**
-- Help break down complex tasks into concrete, actionable subtasks
-- Suggest what to prioritize based on their current habits and tasks
-- Be concise and actionable - suggest specific next steps
-- Use a direct, motivational tone
-
 **Making Changes:**
-When the user asks you to make changes, propose them using JSON format in code blocks:
+When the user asks you to make changes to habits or tasks, propose them using JSON format in code blocks:
 
 \`\`\`json-action
 {"type": "add_task", "text": "New task", "label": "Add 'New task'"}
@@ -96,29 +89,55 @@ When the user asks you to make changes, propose them using JSON format in code b
 The user will see approval buttons. Keep responses brief (2-3 paragraphs max).`;
 }
 
-export function ChatPanel({ isOpen, onClose, habits, tasks, currentHour, onAction }: ChatPanelProps) {
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: '1',
-      role: 'assistant',
-      text: `I can see your ${habits.length} habits and ${tasks.filter(t => !t.completed).length} tasks. How can I help?`,
-    },
-  ]);
+export function ChatPanel({ isOpen, onClose, habits, tasks, currentHour, onAction, agents }: ChatPanelProps) {
+  const [selectedAgentId, setSelectedAgentId] = useState<string>(() => agents[0]?.id || 'main');
+  const [showAgentPicker, setShowAgentPicker] = useState(false);
+  const [conversationsByAgent, setConversationsByAgent] = useState<Record<string, Message[]>>({});
   const [input, setInput] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   const [streamingText, setStreamingText] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const agentPickerRef = useRef<HTMLDivElement>(null);
 
+  // Ensure selectedAgentId stays valid
   useEffect(() => {
-    setMessages(prev => {
-      if (prev.length > 0 && prev[0].id === '1') {
-        return [{
-          ...prev[0],
-          text: `I can see your ${habits.length} habits and ${tasks.filter(t => !t.completed).length} tasks. How can I help?`,
-        }, ...prev.slice(1)];
+    if (agents.length > 0 && !agents.find(a => a.id === selectedAgentId)) {
+      setSelectedAgentId(agents[0].id);
+    }
+  }, [agents, selectedAgentId]);
+
+  // Get or create messages for current agent
+  const getWelcomeMessage = (): Message => ({
+    id: 'welcome',
+    role: 'assistant',
+    text: `I can see your ${habits.length} habits and ${tasks.filter(t => !t.completed).length} tasks. How can I help?`,
+  });
+
+  const messages = conversationsByAgent[selectedAgentId] || [getWelcomeMessage()];
+
+  const setMessages = (updater: Message[] | ((prev: Message[]) => Message[])) => {
+    setConversationsByAgent(prev => {
+      const current = prev[selectedAgentId] || [getWelcomeMessage()];
+      const next = typeof updater === 'function' ? updater(current) : updater;
+      return { ...prev, [selectedAgentId]: next };
+    });
+  };
+
+  // Update welcome message when habits/tasks change
+  useEffect(() => {
+    setConversationsByAgent(prev => {
+      const updated = { ...prev };
+      for (const agentId of Object.keys(updated)) {
+        const msgs = updated[agentId];
+        if (msgs.length > 0 && msgs[0].id === 'welcome') {
+          updated[agentId] = [{
+            ...msgs[0],
+            text: `I can see your ${habits.length} habits and ${tasks.filter(t => !t.completed).length} tasks. How can I help?`,
+          }, ...msgs.slice(1)];
+        }
       }
-      return prev;
+      return updated;
     });
   }, [habits, tasks]);
 
@@ -129,6 +148,20 @@ export function ChatPanel({ isOpen, onClose, habits, tasks, currentHour, onActio
   useEffect(() => {
     if (isOpen) setTimeout(() => inputRef.current?.focus(), 100);
   }, [isOpen]);
+
+  // Close agent picker on outside click
+  useEffect(() => {
+    if (!showAgentPicker) return;
+    const handler = (e: MouseEvent) => {
+      if (agentPickerRef.current && !agentPickerRef.current.contains(e.target as Node)) {
+        setShowAgentPicker(false);
+      }
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [showAgentPicker]);
+
+  const selectedAgent = agents.find(a => a.id === selectedAgentId);
 
   const handleSend = async () => {
     if (!input.trim() || isTyping) return;
@@ -151,7 +184,7 @@ export function ChatPanel({ isOpen, onClose, habits, tasks, currentHour, onActio
       for await (const chunk of streamChat(systemPrompt, [
         ...conversationHistory,
         { role: 'user', content: userInput },
-      ])) {
+      ], selectedAgentId)) {
         fullResponse += chunk;
         setStreamingText(fullResponse);
       }
@@ -176,7 +209,38 @@ export function ChatPanel({ isOpen, onClose, habits, tasks, currentHour, onActio
       <div className="fixed inset-0 bg-black/20 z-40" onClick={onClose} />
       <div className="fixed inset-y-0 right-0 w-full sm:w-96 bg-tokyo-bg shadow-2xl z-50 flex flex-col border-l border-tokyo-border">
         <div className="px-4 py-3 border-b border-tokyo-border flex items-center justify-between bg-tokyo-surface">
-          <h3 className="text-xs font-semibold text-tokyo-text-muted uppercase tracking-wider">Planning</h3>
+          <div className="relative" ref={agentPickerRef}>
+            <button
+              onClick={() => agents.length > 1 && setShowAgentPicker(!showAgentPicker)}
+              className={`flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider transition-colors ${
+                agents.length > 1 ? 'text-tokyo-text-muted active:text-tokyo-text' : 'text-tokyo-text-muted cursor-default'
+              }`}
+            >
+              <span>{selectedAgent?.name || selectedAgentId}</span>
+              {agents.length > 1 && (
+                <svg className={`w-3 h-3 transition-transform ${showAgentPicker ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                </svg>
+              )}
+            </button>
+            {showAgentPicker && (
+              <div className="absolute left-0 top-full mt-1 bg-tokyo-surface border border-tokyo-border rounded-lg shadow-lg z-20 py-1 min-w-[140px]">
+                {agents.map(agent => (
+                  <button
+                    key={agent.id}
+                    onClick={() => { setSelectedAgentId(agent.id); setShowAgentPicker(false); }}
+                    className={`w-full text-left px-3 py-2 text-xs transition-colors ${
+                      agent.id === selectedAgentId
+                        ? 'text-tokyo-blue bg-tokyo-blue-bg'
+                        : 'text-tokyo-text active:bg-tokyo-surface-alt'
+                    }`}
+                  >
+                    {agent.name || agent.id}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
           <button onClick={onClose} className="p-2 text-tokyo-text-muted active:text-tokyo-text rounded-lg transition-colors">
             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />

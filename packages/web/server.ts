@@ -1,5 +1,6 @@
 import express from 'express';
 import path from 'path';
+import fs from 'fs';
 import { fileURLToPath } from 'url';
 import { execSync } from 'child_process';
 import { loadState, saveState } from 'clawkeeper/src/storage';
@@ -368,20 +369,41 @@ app.post('/api/chat', async (req, res) => {
   }
 
   try {
-    const { systemPrompt, messages } = req.body;
+    const { systemPrompt, messages, agentId } = req.body;
+    const agent = agentId || 'main';
+
+    // Read agent personality from workspace SOUL.md / IDENTITY.md
+    let agentPersonality = '';
+    try {
+      const agentsOutput = execSync('openclaw agents list --json', { encoding: 'utf-8', timeout: 5000 });
+      const agentsList = JSON.parse(agentsOutput) as Array<{ id: string; workspace?: string }>;
+      const agentInfo = agentsList.find(a => a.id === agent);
+      if (agentInfo?.workspace) {
+        const soulPath = path.join(agentInfo.workspace, 'SOUL.md');
+        const identityPath = path.join(agentInfo.workspace, 'IDENTITY.md');
+        if (fs.existsSync(soulPath)) agentPersonality += fs.readFileSync(soulPath, 'utf-8') + '\n\n';
+        if (fs.existsSync(identityPath)) agentPersonality += fs.readFileSync(identityPath, 'utf-8') + '\n\n';
+      }
+    } catch {
+      // Agent personality lookup failed, proceed without it
+    }
+
+    const fullSystemPrompt = agentPersonality
+      ? `${agentPersonality}---\n\n${systemPrompt}`
+      : systemPrompt;
 
     const ocRes = await fetch(`${OPENCLAW_URL}/v1/chat/completions`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         Authorization: `Bearer ${OPENCLAW_TOKEN}`,
-        'x-openclaw-agent-id': 'main',
-        'x-openclaw-session-key': 'clawkeeper-planning',
+        'x-openclaw-agent-id': agent,
+        'x-openclaw-session-key': `clawkeeper-chat-${agent}`,
       },
       body: JSON.stringify({
         model: 'claude-sonnet-4-20250514',
         stream: true,
-        messages: [{ role: 'system', content: systemPrompt }, ...messages],
+        messages: [{ role: 'system', content: fullSystemPrompt }, ...messages],
       }),
     });
 
