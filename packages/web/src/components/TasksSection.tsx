@@ -19,6 +19,7 @@ interface TasksSectionProps {
   onUpdateText: (id: string, text: string) => void;
   onUpdateDueDate: (id: string, dueDate: string | null) => void;
   onUpdateAgent?: (id: string, agentId: string | null) => void;
+  allAgents?: Array<{ id: string; name?: string }>;
   revealedItem: RevealedItem;
   onSetRevealed: (item: RevealedItem) => void;
   onToggleShowCompleted: () => void;
@@ -38,6 +39,7 @@ export function TasksSection({
   onUpdateText,
   onUpdateDueDate,
   onUpdateAgent,
+  allAgents,
   revealedItem,
   onSetRevealed,
   onToggleShowCompleted,
@@ -117,6 +119,7 @@ export function TasksSection({
               onUpdateText={onUpdateText}
               onUpdateDueDate={onUpdateDueDate}
               onUpdateAgent={onUpdateAgent}
+              allAgents={allAgents}
               revealedItem={revealedItem}
               onSetRevealed={onSetRevealed}
             />

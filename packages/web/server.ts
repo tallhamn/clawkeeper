@@ -337,7 +337,8 @@ app.post('/api/task/unassign-agent', (req, res) => {
 app.get('/api/agents', (_req, res) => {
   try {
     const output = execSync('openclaw agents list --json', { encoding: 'utf-8', timeout: 5000 });
-    res.json(JSON.parse(output));
+    const raw = JSON.parse(output) as Array<{ id: string; name?: string; identityName?: string }>;
+    res.json(raw.map(a => ({ id: a.id, name: a.identityName || a.name || a.id })));
   } catch {
     res.json([]);
   }

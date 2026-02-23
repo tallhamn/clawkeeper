@@ -19,6 +19,7 @@ interface TaskItemProps {
   onUpdateText: (id: string, text: string) => void;
   onUpdateDueDate: (id: string, dueDate: string | null) => void;
   onUpdateAgent?: (id: string, agentId: string | null) => void;
+  allAgents?: Array<{ id: string; name?: string }>;
   revealedItem: RevealedItem;
   onSetRevealed: (item: RevealedItem) => void;
 }
@@ -36,6 +37,7 @@ export function TaskItem({
   onUpdateText,
   onUpdateDueDate,
   onUpdateAgent,
+  allAgents,
   revealedItem,
   onSetRevealed,
 }: TaskItemProps) {
@@ -182,7 +184,7 @@ export function TaskItem({
                         onClick={(e) => { e.stopPropagation(); onSetRevealed({ type: 'task', id: task.id, mode: 'edit' }); }}
                         className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-tokyo-magenta/10 text-tokyo-magenta cursor-pointer"
                       >
-                        {task.agentId}
+                        {allAgents?.find(a => a.id === task.agentId)?.name || task.agentId}
                       </span>
                     )}
                   </span>
@@ -257,7 +259,7 @@ export function TaskItem({
                     <span className="text-tokyo-text-dim">{'\u00B7'}</span>
                     {task.agentId ? (
                       <span className="inline-flex items-center gap-1 text-xs text-tokyo-magenta">
-                        {task.agentId}
+                        {allAgents?.find(a => a.id === task.agentId)?.name || task.agentId}
                         <button
                           onClick={() => { onUpdateAgent(task.id, null); setShowAgentPicker(false); }}
                           className="active:text-tokyo-red"
@@ -477,6 +479,7 @@ export function TaskItem({
           onUpdateText={onUpdateText}
           onUpdateDueDate={onUpdateDueDate}
           onUpdateAgent={onUpdateAgent}
+          allAgents={allAgents}
           revealedItem={revealedItem}
           onSetRevealed={onSetRevealed}
         />

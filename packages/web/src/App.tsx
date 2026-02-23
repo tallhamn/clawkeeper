@@ -394,6 +394,7 @@ function App() {
               if (agentId) silentMutate(() => api.assignTaskAgent(id, agentId));
               else silentMutate(() => api.unassignTaskAgent(id));
             }}
+            allAgents={agents}
             revealedItem={revealedItem}
             onSetRevealed={setRevealedItem}
             onToggleShowCompleted={() => setShowCompleted(!showCompleted)}

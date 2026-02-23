@@ -59,6 +59,8 @@ export function HabitItem({
   const [countdown, setCountdown] = useState('');
   const [showAllNotes, setShowAllNotes] = useState(false);
   const [showAgentMenu, setShowAgentMenu] = useState(false);
+  const [agentMenuAbove, setAgentMenuAbove] = useState(false);
+  const agentBtnRef = useRef<HTMLButtonElement>(null);
   const previousTotalCompletions = useRef(habit.totalCompletions);
 
   const isDue = isHabitAvailable(habit.lastCompleted, habit.repeatIntervalHours, habit.forcedAvailable);
@@ -286,11 +288,17 @@ export function HabitItem({
                     <>
                       <span className="text-tokyo-text-dim">{'\u00B7'}</span>
                       <div className="relative">
-                        <button onClick={() => setShowAgentMenu(!showAgentMenu)} className="text-xs text-tokyo-magenta active:text-tokyo-text">
+                        <button ref={agentBtnRef} onClick={() => {
+                          if (!showAgentMenu && agentBtnRef.current) {
+                            const rect = agentBtnRef.current.getBoundingClientRect();
+                            setAgentMenuAbove(rect.bottom + 150 > window.innerHeight);
+                          }
+                          setShowAgentMenu(!showAgentMenu);
+                        }} className="text-xs text-tokyo-magenta active:text-tokyo-text">
                           {habit.agentId ? 'Change agent' : 'Assign agent'}
                         </button>
                         {showAgentMenu && (
-                          <div className="absolute top-full left-0 mt-1 bg-tokyo-surface border border-tokyo-border rounded-lg shadow-lg z-20 py-1 min-w-[120px]">
+                          <div className={`absolute left-0 bg-tokyo-surface border border-tokyo-border rounded-lg shadow-lg z-20 py-1 min-w-[120px] ${agentMenuAbove ? 'bottom-full mb-1' : 'top-full mt-1'}`}>
                             {agents.map(a => (
                               <button key={a.id} onClick={() => { onAssignAgent(habit.id, a.id); setShowAgentMenu(false); }}
                                 className={`block w-full text-left px-3 py-1.5 text-xs active:bg-tokyo-surface-alt ${habit.agentId === a.id ? 'text-tokyo-magenta' : 'text-tokyo-text'}`}>
