@@ -32,6 +32,7 @@ export const wakeupHabit = (id: string) => post('/api/habit/wakeup', { id });
 export const assignHabitAgent = (id: string, agentId: string) => post('/api/habit/assign-agent', { id, agentId });
 export const unassignHabitAgent = (id: string) => post('/api/habit/unassign-agent', { id });
 export const adjustPreferredHour = (id: string, hour: number) => post('/api/habit/adjust-preferred-hour', { id, hour });
+export const setHabitIcon = (id: string, icon: string) => post('/api/habit/set-icon', { id, icon });
 export const adjustCompletionTime = (id: string, timestamp: string, hour: number) => post('/api/habit/adjust-completion-time', { id, timestamp, hour });
 
 // Task actions

@@ -68,8 +68,7 @@ function App() {
             await api.adjustPreferredHour(h.id, newHour);
           }
           if (newIcon != null) {
-            // Icon is set along with text edit — but we just want to update the icon
-            // For now, refetch state after all updates
+            await api.setHabitIcon(h.id, newIcon);
           }
         }
         const refreshed = await api.fetchState();

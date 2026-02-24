@@ -191,6 +191,21 @@ app.post('/api/habit/adjust-preferred-hour', (req, res) => {
   }
 });
 
+app.post('/api/habit/set-icon', (req, res) => {
+  try {
+    const { id, icon } = req.body;
+    const newState = withUndo(state => ({
+      ...state,
+      habits: state.habits.map(h =>
+        h.id === id ? { ...h, icon } : h
+      ),
+    }));
+    res.json(newState);
+  } catch (err: any) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
 app.post('/api/habit/adjust-completion-time', (req, res) => {
   try {
     const { id, timestamp, hour } = req.body;
