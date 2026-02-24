@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useDraggable, useDroppable } from '@dnd-kit/core';
 import type { Task } from '@clawkeeper/shared/src/types';
 import { ENABLE_AUTO_REFLECTION } from '@clawkeeper/shared/src/constants';
 import { getDueDateStatus, formatDueDate } from '@clawkeeper/shared/src/utils';
@@ -22,6 +23,7 @@ interface TaskItemProps {
   allAgents?: Array<{ id: string; name?: string }>;
   revealedItem: RevealedItem;
   onSetRevealed: (item: RevealedItem) => void;
+  isDragOverlay?: boolean;
 }
 
 export function TaskItem({
@@ -40,6 +42,7 @@ export function TaskItem({
   allAgents,
   revealedItem,
   onSetRevealed,
+  isDragOverlay,
 }: TaskItemProps) {
   const [reflectionText, setReflectionText] = useState('');
   const [subtaskText, setSubtaskText] = useState('');
@@ -51,6 +54,18 @@ export function TaskItem({
   const [editText, setEditText] = useState(task.text);
   const [showAgentPicker, setShowAgentPicker] = useState(false);
   const [agents, setAgents] = useState<Array<{ id: string; name?: string }>>([]);
+
+  const { attributes, listeners, setNodeRef: setDragRef, isDragging } = useDraggable({
+    id: task.id,
+    data: { task },
+    disabled: isDragOverlay,
+  });
+
+  const { setNodeRef: setDropRef, isOver } = useDroppable({
+    id: `drop-${task.id}`,
+    data: { taskId: task.id },
+    disabled: isDragOverlay,
+  });
 
   const showReflectionInput = revealedItem?.type === 'task' && revealedItem?.id === task.id && revealedItem?.mode === 'reflection';
   const showAddSubtask = revealedItem?.type === 'task' && revealedItem?.id === task.id && revealedItem?.mode === 'add-subtask';
@@ -121,7 +136,12 @@ export function TaskItem({
   };
 
   return (
-    <div className={`${depth > 0 ? 'ml-2.5 pl-5 border-l-2 border-l-tokyo-border' : ''}`}>
+    <div
+      ref={(node) => { if (!isDragOverlay) { setDragRef(node); setDropRef(node); } }}
+      {...(isDragOverlay ? {} : { ...listeners, ...attributes })}
+      className={`${depth > 0 ? 'ml-2.5 pl-5 border-l-2 border-l-tokyo-border' : ''} ${isDragging ? 'opacity-30' : ''} ${isOver && !isDragging ? 'ring-2 ring-tokyo-blue rounded-lg bg-tokyo-blue/5' : ''} ${isDragOverlay ? 'bg-tokyo-surface rounded-xl shadow-lg px-3' : ''}`}
+      style={isDragOverlay ? { width: '85vw', maxWidth: 500 } : undefined}
+    >
       <div className={`group py-2.5 ${task.completed && !showReflectionInput ? 'opacity-40' : ''}`}>
         <div className="flex items-start gap-2.5">
           <button
@@ -482,6 +502,7 @@ export function TaskItem({
           allAgents={allAgents}
           revealedItem={revealedItem}
           onSetRevealed={onSetRevealed}
+          isDragOverlay={isDragOverlay}
         />
       ))}
     </div>

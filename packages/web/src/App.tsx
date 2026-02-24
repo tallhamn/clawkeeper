@@ -211,6 +211,23 @@ function App() {
     }
   }, [state, mutate]);
 
+  const handleMoveTask = useCallback((id: string, parentId?: string) => {
+    const findTask = (tasks: Task[], targetId: string): Task | null => {
+      for (const t of tasks) {
+        if (t.id === targetId) return t;
+        const found = findTask(t.children || [], targetId);
+        if (found) return found;
+      }
+      return null;
+    };
+    const task = state ? findTask(state.tasks, id) : null;
+    const label = task ? `"${task.text}"` : 'task';
+    mutate(
+      parentId ? `Moved ${label} under another task` : `Moved ${label} to root`,
+      () => api.moveTask(id, parentId)
+    );
+  }, [state, mutate]);
+
   // Handle LLM actions from chat panel
   const handleLLMAction = useCallback((action: LLMAction) => {
     switch (action.type) {
@@ -332,7 +349,7 @@ function App() {
                     type="text"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    placeholder="Search habits & tasks..."
+                    placeholder="Filter..."
                     className="w-full pl-9 pr-3 py-1.5 text-sm bg-tokyo-surface-alt border border-tokyo-border rounded-lg focus:outline-none focus:ring-1 focus:ring-tokyo-blue transition-colors"
                   />
                   {searchQuery && (
@@ -409,6 +426,7 @@ function App() {
             revealedItem={revealedItem}
             onSetRevealed={setRevealedItem}
             onToggleShowCompleted={() => setShowCompleted(!showCompleted)}
+            onMoveTask={handleMoveTask}
           />
         </div>
       </div>

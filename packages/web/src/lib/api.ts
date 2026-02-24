@@ -42,6 +42,7 @@ export const deleteTask = (id: string) => post('/api/task/delete', { id });
 export const editTask = (id: string, text: string, dueDate?: string | null) => post('/api/task/edit', { id, text, dueDate });
 export const setTaskDueDate = (id: string, dueDate: string | null) => post('/api/task/set-due-date', { id, dueDate });
 export const addSubtask = (parentId: string, text: string) => post('/api/task/add-subtask', { parentId, text });
+export const moveTask = (id: string, parentId?: string) => post('/api/task/move', { id, parentId });
 export const addTaskNote = (id: string, text: string) => post('/api/task/add-note', { id, text });
 export const editTaskNote = (id: string, noteId: string, newNote: string) => post('/api/task/edit-note', { id, noteId, newNote });
 export const deleteTaskNote = (id: string, noteId: string) => post('/api/task/delete-note', { id, noteId });

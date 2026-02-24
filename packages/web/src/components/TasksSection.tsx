@@ -1,4 +1,15 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
+import {
+  DndContext,
+  DragOverlay,
+  TouchSensor,
+  MouseSensor,
+  useSensor,
+  useSensors,
+  useDroppable,
+  type DragStartEvent,
+  type DragEndEvent,
+} from '@dnd-kit/core';
 import type { Task } from '@clawkeeper/shared/src/types';
 import { TaskItem } from './TaskItem';
 import { AddTaskRow } from './AddTaskRow';
@@ -23,6 +34,23 @@ interface TasksSectionProps {
   revealedItem: RevealedItem;
   onSetRevealed: (item: RevealedItem) => void;
   onToggleShowCompleted: () => void;
+  onMoveTask?: (id: string, parentId?: string) => void;
+}
+
+function RootDropZone() {
+  const { setNodeRef, isOver } = useDroppable({ id: 'drop-root' });
+  return (
+    <div
+      ref={setNodeRef}
+      className={`h-8 -mx-5 flex items-center justify-center transition-colors rounded-lg ${
+        isOver ? 'bg-tokyo-green/10 border-2 border-dashed border-tokyo-green' : ''
+      }`}
+    >
+      {isOver && (
+        <span className="text-[10px] text-tokyo-green font-medium">Drop here to move to root</span>
+      )}
+    </div>
+  );
 }
 
 export function TasksSection({
@@ -43,8 +71,69 @@ export function TasksSection({
   revealedItem,
   onSetRevealed,
   onToggleShowCompleted,
+  onMoveTask,
 }: TasksSectionProps) {
   const [isAdding, setIsAdding] = useState(false);
+  const [activeTask, setActiveTask] = useState<Task | null>(null);
+
+  const touchSensor = useSensor(TouchSensor, {
+    activationConstraint: { delay: 250, tolerance: 5 },
+  });
+  const mouseSensor = useSensor(MouseSensor, {
+    activationConstraint: { distance: 5 },
+  });
+  const sensors = useSensors(touchSensor, mouseSensor);
+
+  const findTaskById = useCallback((taskList: Task[], id: string): Task | null => {
+    for (const t of taskList) {
+      if (t.id === id) return t;
+      const found = findTaskById(t.children || [], id);
+      if (found) return found;
+    }
+    return null;
+  }, []);
+
+  const isDescendantOf = useCallback((taskList: Task[], parentId: string, childId: string): boolean => {
+    const parent = findTaskById(taskList, parentId);
+    if (!parent) return false;
+    const check = (t: Task): boolean => {
+      if (t.id === childId) return true;
+      return t.children?.some(check) ?? false;
+    };
+    return parent.children?.some(check) ?? false;
+  }, [findTaskById]);
+
+  const handleDragStart = useCallback((event: DragStartEvent) => {
+    const task = event.active.data.current?.task as Task | undefined;
+    setActiveTask(task ?? null);
+  }, []);
+
+  const handleDragEnd = useCallback((event: DragEndEvent) => {
+    setActiveTask(null);
+    const { active, over } = event;
+    if (!over || !onMoveTask) return;
+
+    const draggedId = active.id as string;
+    const overId = over.id as string;
+
+    if (overId === 'drop-root') {
+      onMoveTask(draggedId);
+      return;
+    }
+
+    // Extract target task id from "drop-{taskId}"
+    const targetId = overId.startsWith('drop-') ? overId.slice(5) : null;
+    if (!targetId || targetId === draggedId) return;
+
+    // Prevent dropping onto own descendant
+    if (isDescendantOf(tasks, draggedId, targetId)) return;
+
+    onMoveTask(draggedId, targetId);
+  }, [onMoveTask, tasks, isDescendantOf]);
+
+  const handleDragCancel = useCallback(() => {
+    setActiveTask(null);
+  }, []);
 
   const filterTasksBySearch = (task: Task, query: string): boolean => {
     if (!query) return true;
@@ -102,38 +191,66 @@ export function TasksSection({
         <AddTaskRow onAdd={handleAddTask} onCancel={() => setIsAdding(false)} />
       )}
 
-      <div className="px-5 py-2">
-        {visibleTasks.length > 0 ? (
-          visibleTasks.map((task) => (
+      <DndContext
+        sensors={sensors}
+        onDragStart={handleDragStart}
+        onDragEnd={handleDragEnd}
+        onDragCancel={handleDragCancel}
+      >
+        <div className="px-5 py-2">
+          <RootDropZone />
+          {visibleTasks.length > 0 ? (
+            visibleTasks.map((task) => (
+              <TaskItem
+                key={task.id}
+                task={task}
+                depth={0}
+                showCompleted={showCompleted}
+                onToggle={onToggle}
+                onAddNote={onAddNote}
+                onEditNote={onEditNote}
+                onDeleteNote={onDeleteNote}
+                onAddSubtask={onAddSubtask}
+                onDelete={onDelete}
+                onUpdateText={onUpdateText}
+                onUpdateDueDate={onUpdateDueDate}
+                onUpdateAgent={onUpdateAgent}
+                allAgents={allAgents}
+                revealedItem={revealedItem}
+                onSetRevealed={onSetRevealed}
+              />
+            ))
+          ) : searchQuery ? (
+            <div className="py-8 text-center text-tokyo-text-dim text-sm">
+              No tasks matching "{searchQuery}"
+            </div>
+          ) : showCompleted ? (
+            <div className="py-8 text-center text-tokyo-text-dim text-sm">No tasks yet</div>
+          ) : (
+            <div className="py-8 text-center text-tokyo-text-dim text-sm">All tasks complete</div>
+          )}
+        </div>
+        <DragOverlay dropAnimation={null}>
+          {activeTask ? (
             <TaskItem
-              key={task.id}
-              task={task}
+              task={activeTask}
               depth={0}
               showCompleted={showCompleted}
-              onToggle={onToggle}
-              onAddNote={onAddNote}
-              onEditNote={onEditNote}
-              onDeleteNote={onDeleteNote}
-              onAddSubtask={onAddSubtask}
-              onDelete={onDelete}
-              onUpdateText={onUpdateText}
-              onUpdateDueDate={onUpdateDueDate}
-              onUpdateAgent={onUpdateAgent}
-              allAgents={allAgents}
-              revealedItem={revealedItem}
-              onSetRevealed={onSetRevealed}
+              onToggle={() => {}}
+              onAddNote={() => {}}
+              onEditNote={() => {}}
+              onDeleteNote={() => {}}
+              onAddSubtask={() => {}}
+              onDelete={() => {}}
+              onUpdateText={() => {}}
+              onUpdateDueDate={() => {}}
+              revealedItem={null}
+              onSetRevealed={() => {}}
+              isDragOverlay
             />
-          ))
-        ) : searchQuery ? (
-          <div className="py-8 text-center text-tokyo-text-dim text-sm">
-            No tasks matching "{searchQuery}"
-          </div>
-        ) : showCompleted ? (
-          <div className="py-8 text-center text-tokyo-text-dim text-sm">No tasks yet</div>
-        ) : (
-          <div className="py-8 text-center text-tokyo-text-dim text-sm">All tasks complete</div>
-        )}
-      </div>
+          ) : null}
+        </DragOverlay>
+      </DndContext>
     </div>
   );
 }

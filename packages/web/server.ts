@@ -11,6 +11,7 @@ import {
   deleteTask,
   editTask,
   addSubtask,
+  moveTask,
   addTaskNote,
   editTaskNote,
   deleteTaskNote,
@@ -315,6 +316,17 @@ app.post('/api/task/delete-note', (req, res) => {
     const newState = withUndo(state =>
       deleteTaskNote(state, req.body.noteText || '', req.body.id, undefined, req.body.noteId)
     );
+    res.json(newState);
+  } catch (err: any) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+app.post('/api/task/move', (req, res) => {
+  try {
+    const { id, parentId } = req.body;
+    const root = !parentId;
+    const newState = withUndo(state => moveTask(state, id, undefined, parentId, root));
     res.json(newState);
   } catch (err: any) {
     res.status(400).json({ error: err.message });
