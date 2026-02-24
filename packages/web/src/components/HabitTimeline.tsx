@@ -78,41 +78,31 @@ interface LayoutItem {
 function layoutEntries(entries: TimelineEntry[]): LayoutItem[] {
   if (entries.length === 0) return [];
 
-  const BASE_FONT = 11;
-  const MIN_FONT = 6;
-  const BASE_GAP = 4.5;
+  const MAX_PCT = 97;
+  const FONT = 11;
+  const MIN_GAP = 2.5;
+  const PREFERRED_GAP = 4.5;
 
-  let items: LayoutItem[] = entries.map((e) => ({
+  const firstPct = (entries[0].hour / 24) * 100;
+  const available = MAX_PCT - firstPct;
+  const neededGaps = entries.length - 1;
+  const gap = neededGaps > 0
+    ? Math.max(MIN_GAP, Math.min(PREFERRED_GAP, available / neededGaps))
+    : PREFERRED_GAP;
+
+  const items: LayoutItem[] = entries.map((e) => ({
     entry: e,
     pct: (e.hour / 24) * 100,
-    fontSize: BASE_FONT,
+    fontSize: FONT,
   }));
 
-  function nudge(gap: number) {
-    for (let i = 1; i < items.length; i++) {
-      if (items[i].pct - items[i - 1].pct < gap) {
-        items[i].pct = items[i - 1].pct + gap;
-      }
+  for (let i = 1; i < items.length; i++) {
+    if (items[i].pct - items[i - 1].pct < gap) {
+      items[i].pct = items[i - 1].pct + gap;
     }
   }
-
-  nudge(BASE_GAP);
-
-  const last = items[items.length - 1];
-  if (last.pct > 98) {
-    const firstPct = (entries[0].hour / 24) * 100;
-    const available = 98 - firstPct;
-    const neededGaps = entries.length - 1;
-    const newGap = neededGaps > 0 ? Math.min(BASE_GAP, available / neededGaps) : BASE_GAP;
-    const scale = Math.max(newGap / BASE_GAP, MIN_FONT / BASE_FONT);
-    const fontSize = Math.max(MIN_FONT, Math.round(BASE_FONT * scale));
-
-    items = entries.map((e) => ({
-      entry: e,
-      pct: (e.hour / 24) * 100,
-      fontSize,
-    }));
-    nudge(newGap);
+  for (const item of items) {
+    item.pct = Math.min(item.pct, MAX_PCT);
   }
 
   return items;
