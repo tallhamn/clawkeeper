@@ -80,7 +80,7 @@ function layoutEntries(entries: TimelineEntry[]): LayoutItem[] {
 
   const BASE_FONT = 11;
   const MIN_FONT = 6;
-  const BASE_GAP = 2.8;
+  const BASE_GAP = 4.5;
 
   let items: LayoutItem[] = entries.map((e) => ({
     entry: e,
@@ -91,7 +91,6 @@ function layoutEntries(entries: TimelineEntry[]): LayoutItem[] {
   function nudge(gap: number) {
     for (let i = 1; i < items.length; i++) {
       if (items[i].pct - items[i - 1].pct < gap) {
-        if (items[i].entry.kind === 'logged') continue;
         items[i].pct = items[i - 1].pct + gap;
       }
     }

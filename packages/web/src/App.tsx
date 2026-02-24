@@ -74,8 +74,8 @@ function App() {
         const refreshed = await api.fetchState();
         setState(refreshed);
       }
-    } catch {
-      // Inference failed, no big deal
+    } catch (err) {
+      console.warn('Habit metadata inference failed:', err);
     } finally {
       inferringRef.current = false;
     }
