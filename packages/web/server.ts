@@ -35,6 +35,7 @@ const PORT = process.env.PORT || 3000;
 
 const OPENCLAW_URL = process.env.OPENCLAW_URL || 'http://127.0.0.1:18789';
 const OPENCLAW_TOKEN = process.env.OPENCLAW_TOKEN || '';
+const OPENCLAW_MODEL = process.env.OPENCLAW_MODEL || '';
 
 app.use(express.json());
 
@@ -438,7 +439,7 @@ app.post('/api/chat', async (req, res) => {
         'x-openclaw-session-key': `clawkeeper-chat-${agent}`,
       },
       body: JSON.stringify({
-        model: 'ollama/gpt-oss:120b',
+        ...(OPENCLAW_MODEL && { model: OPENCLAW_MODEL }),
         stream: true,
         messages: [{ role: 'system', content: fullSystemPrompt }, ...messages],
       }),
@@ -512,7 +513,7 @@ app.post('/api/coach-message', async (req, res) => {
         'x-openclaw-session-key': `clawkeeper-coach-${agent}-${Date.now()}`,
       },
       body: JSON.stringify({
-        model: 'ollama/gpt-oss:120b',
+        ...(OPENCLAW_MODEL && { model: OPENCLAW_MODEL }),
         stream: false,
         messages: [{ role: 'system', content: fullSystemPrompt }, ...messages],
       }),
@@ -546,7 +547,7 @@ app.post('/api/infer-hours', async (req, res) => {
         'x-openclaw-session-key': 'clawkeeper-infer',
       },
       body: JSON.stringify({
-        model: 'ollama/gpt-oss:120b',
+        ...(OPENCLAW_MODEL && { model: OPENCLAW_MODEL }),
         stream: false,
         messages: [
           { role: 'system', content: 'You are a helpful assistant. Return only valid JSON.' },
@@ -587,7 +588,7 @@ app.post('/api/infer-icons', async (req, res) => {
         'x-openclaw-session-key': 'clawkeeper-infer',
       },
       body: JSON.stringify({
-        model: 'ollama/gpt-oss:120b',
+        ...(OPENCLAW_MODEL && { model: OPENCLAW_MODEL }),
         stream: false,
         messages: [
           { role: 'system', content: 'You are a helpful assistant. Return only valid JSON.' },
