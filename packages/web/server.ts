@@ -489,7 +489,7 @@ app.post('/api/coach-message', async (req, res) => {
         'Content-Type': 'application/json',
         Authorization: `Bearer ${OPENCLAW_TOKEN}`,
         'x-openclaw-agent-id': agent,
-        'x-openclaw-session-key': `clawkeeper-coach-${agent}`,
+        'x-openclaw-session-key': `clawkeeper-coach-${agent}-${Date.now()}`,
       },
       body: JSON.stringify({
         model: 'claude-sonnet-4-20250514',

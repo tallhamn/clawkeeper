@@ -40,7 +40,7 @@ export function useCoachMessage(habits: Habit[], currentHour: number, agents?: A
 
   const generateLLMMessage = async () => {
     const now = Date.now();
-    if (now - lastGeneratedRef.current < 30000) return;
+    if (now - lastGeneratedRef.current < 300000) return;
     if (isGenerating) return;
     if (habits.length === 0) {
       return;
