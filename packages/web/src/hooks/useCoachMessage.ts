@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import type { Habit } from '@clawkeeper/shared/src/types';
 import { isHabitAvailable, formatTimeSince, getHabitMarkerHours } from '@clawkeeper/shared/src/utils';
-import { sendMessage } from '@/lib/claude';
+import { fetchCoachMessage } from '../lib/api';
 
 interface LastAction {
   text: string;
@@ -20,7 +20,6 @@ function getTimeOfDay(hour: number): string {
 function getNextScheduled(habit: Habit, currentHour: number): number | null {
   const hours = getHabitMarkerHours(habit);
   if (hours.length === 0) return null;
-  // Find nearest future slot
   let best: number | null = null;
   let bestDiff = Infinity;
   for (const h of hours) {
@@ -39,16 +38,10 @@ export function useCoachMessage(habits: Habit[], currentHour: number) {
   const [isGenerating, setIsGenerating] = useState(false);
   const lastGeneratedRef = useRef<number>(0);
 
-  // Generate contextual LLM message
   const generateLLMMessage = async () => {
-    // Don't generate if we generated recently (within 30 seconds)
     const now = Date.now();
     if (now - lastGeneratedRef.current < 30000) return;
-
-    // Don't generate if already generating
     if (isGenerating) return;
-
-    // Don't generate if no habits
     if (habits.length === 0) {
       setMessage('Add a habit to get started.');
       return;
@@ -58,18 +51,14 @@ export function useCoachMessage(habits: Habit[], currentHour: number) {
       setIsGenerating(true);
       lastGeneratedRef.current = now;
 
-      // Build rich time-aware context
-      const availableHabits = habits.filter((h) => isHabitAvailable(h.lastCompleted, h.repeatIntervalHours, h.forcedAvailable));
-      const restingHabits = habits.filter((h) => !isHabitAvailable(h.lastCompleted, h.repeatIntervalHours, h.forcedAvailable));
+      const availableHabits = habits.filter(h => isHabitAvailable(h.lastCompleted, h.repeatIntervalHours, h.forcedAvailable));
+      const restingHabits = habits.filter(h => !isHabitAvailable(h.lastCompleted, h.repeatIntervalHours, h.forcedAvailable));
 
-      // Find the most urgent available habit (closest preferred hour to now, or overdue)
-      const overdueHabits = availableHabits.filter((h) => {
+      const overdueHabits = availableHabits.filter(h => {
         if (h.preferredHour == null) return false;
-        const hours = getHabitMarkerHours(h);
-        return hours.some((hr) => hr < currentHour);
+        return getHabitMarkerHours(h).some(hr => hr < currentHour);
       });
 
-      // Find next upcoming habit
       let nextHabit: { habit: Habit; inHours: number } | null = null;
       for (const h of availableHabits) {
         const next = getNextScheduled(h, currentHour);
@@ -81,7 +70,7 @@ export function useCoachMessage(habits: Habit[], currentHour: number) {
         }
       }
 
-      const habitContext = habits.map((h) => {
+      const habitContext = habits.map(h => {
         const available = isHabitAvailable(h.lastCompleted, h.repeatIntervalHours, h.forcedAvailable);
         const timeSince = h.lastCompleted ? formatTimeSince(h.lastCompleted) : 'never done';
         const scheduledAt = h.preferredHour != null ? `scheduled ${h.preferredHour}:00` : 'no set time';
@@ -92,12 +81,12 @@ export function useCoachMessage(habits: Habit[], currentHour: number) {
         `Time: ${currentHour}:00 (${getTimeOfDay(currentHour)})`,
         `Progress: ${restingHabits.length}/${habits.length} completed recently`,
         `Available now: ${availableHabits.length}`,
-        overdueHabits.length > 0 ? `Overdue: ${overdueHabits.map((h) => h.text).join(', ')}` : null,
+        overdueHabits.length > 0 ? `Overdue: ${overdueHabits.map(h => h.text).join(', ')}` : null,
         nextHabit ? `Next scheduled: "${nextHabit.habit.text}" in ~${nextHabit.inHours}h` : null,
-        availableHabits.length === 0 ? 'All habits resting — nothing to do right now' : null,
+        availableHabits.length === 0 ? 'All habits resting \u2014 nothing to do right now' : null,
       ].filter(Boolean).join('\n');
 
-      const prompt = `You are a concise personal coach. Generate ONE brief sentence (max 15 words) about the user's habit status right now.
+      const systemPrompt = `You are a concise personal coach. Generate ONE brief sentence (max 15 words) about the user's habit status right now.
 
 Context:
 ${timeContext}
@@ -107,7 +96,7 @@ ${habitContext}
 
 Rules:
 - Reference specific habit names and timing ("evening walk is in 2h", not "you have habits pending")
-- If something is overdue, mention it gently ("morning run was scheduled earlier — still time")
+- If something is overdue, mention it gently ("morning run was scheduled earlier \u2014 still time")
 - If everything is done, acknowledge it ("clear until evening walk at 6pm")
 - If the next habit is soon, highlight it ("water is up next in 1h")
 - Don't list all habits. Focus on what's most relevant RIGHT NOW
@@ -116,14 +105,13 @@ Rules:
 
 Generate one message:`;
 
-      const response = await sendMessage(prompt, [], [], currentHour, []);
+      const response = await fetchCoachMessage(systemPrompt, [{ role: 'user', content: 'What should I know right now?' }]);
       setMessage(response.trim().replace(/^["']|["']$/g, ''));
-    } catch (error) {
-      console.error('Failed to generate coach message:', error);
-      // Fallback: time-aware static message
-      const availableHabits = habits.filter((h) => isHabitAvailable(h.lastCompleted, h.repeatIntervalHours, h.forcedAvailable));
+    } catch {
+      // Fallback to static message
+      const availableHabits = habits.filter(h => isHabitAvailable(h.lastCompleted, h.repeatIntervalHours, h.forcedAvailable));
       if (availableHabits.length === 0) {
-        setMessage('All habits resting — nothing due right now.');
+        setMessage('All habits resting \u2014 nothing due right now.');
       } else {
         const next = availableHabits[0];
         const nextTime = getNextScheduled(next, currentHour);
@@ -140,14 +128,13 @@ Generate one message:`;
   };
 
   useEffect(() => {
-    const restingCount = habits.filter((h) =>
+    const restingCount = habits.filter(h =>
       h.lastCompleted &&
       (Date.now() - new Date(h.lastCompleted).getTime()) < (h.repeatIntervalHours * 60 * 60 * 1000)
     ).length;
     const total = habits.length;
 
     if (lastAction) {
-      // Reinforcing mode - instant feedback
       const messages = [
         `${lastAction.text} done. ${lastAction.totalCompletions}x completed.`,
         `${restingCount}/${total} complete.`,
@@ -155,7 +142,6 @@ Generate one message:`;
       ];
       setMessage(messages[Math.floor(Math.random() * messages.length)]);
     } else {
-      // Generate LLM message for general status
       generateLLMMessage();
     }
   }, [habits, currentHour, lastAction]);

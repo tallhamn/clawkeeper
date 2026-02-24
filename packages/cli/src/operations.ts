@@ -345,6 +345,27 @@ export function deleteHabitNote(state: AppState, noteText: string, id?: string, 
   return { ...state, habits };
 }
 
+// ── Habit skip/wakeup ──
+
+export function skipHabit(state: AppState, id?: string, text?: string): AppState {
+  const habit = resolveHabit(state, id, text);
+  const now = new Date().toISOString();
+  const habits = state.habits.map(h => {
+    if (h.id !== habit.id) return h;
+    return { ...h, lastCompleted: now, forcedAvailable: false };
+  });
+  return { ...state, habits };
+}
+
+export function wakeupHabit(state: AppState, id?: string, text?: string): AppState {
+  const habit = resolveHabit(state, id, text);
+  const habits = state.habits.map(h => {
+    if (h.id !== habit.id) return h;
+    return { ...h, forcedAvailable: true };
+  });
+  return { ...state, habits };
+}
+
 // ── State operations ──
 
 export function showState(state: AppState): AppState {

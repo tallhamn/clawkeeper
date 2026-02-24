@@ -22,6 +22,8 @@ import {
   editHabitNote,
   deleteHabitNote,
 } from './operations';
+import { assignAgent, unassignAgent } from './agent-operations';
+import { filterByAgent } from '@clawkeeper/shared/src/agent-filter';
 
 // ── Arg parser ──
 
@@ -78,9 +80,11 @@ function run() {
     let result: unknown = undefined;
     let modified = false;
 
+    const agentIdFilter = flags['agent-id'] as string | undefined;
+
     if (entity === 'state') {
       if (command === 'show') {
-        result = showState(state);
+        result = showState(agentIdFilter ? filterByAgent(state, agentIdFilter) : state);
       } else {
         fail(`Unknown command: state ${command}`);
       }
@@ -89,9 +93,11 @@ function run() {
       const text = flags.text as string | undefined;
 
       switch (command) {
-        case 'list':
-          result = listTasks(state, flags.all === true);
+        case 'list': {
+          const viewState = agentIdFilter ? filterByAgent(state, agentIdFilter) : state;
+          result = listTasks(viewState, flags.all === true);
           break;
+        }
 
         case 'add': {
           if (!text) { fail('--text is required'); return; }
@@ -201,9 +207,11 @@ function run() {
       const text = flags.text as string | undefined;
 
       switch (command) {
-        case 'list':
-          result = listHabits(state);
+        case 'list': {
+          const viewState = agentIdFilter ? filterByAgent(state, agentIdFilter) : state;
+          result = listHabits(viewState);
           break;
+        }
 
         case 'add': {
           if (!text) { fail('--text is required'); return; }
@@ -270,8 +278,37 @@ function run() {
         default:
           fail(`Unknown command: habit ${command}`);
       }
+    } else if (entity === 'agent') {
+      switch (command) {
+        case 'assign': {
+          const agentId = flags['agent-id'] as string;
+          const type = flags.type as string;
+          const id = flags.id as string | undefined;
+          const text = flags.text as string | undefined;
+          if (!agentId) { fail('--agent-id is required'); return; }
+          if (!type) { fail('--type is required (habit or task)'); return; }
+          state = assignAgent(state, agentId, type, id, text);
+          result = { assigned: true };
+          modified = true;
+          break;
+        }
+
+        case 'unassign': {
+          const type = flags.type as string;
+          const id = flags.id as string | undefined;
+          const text = flags.text as string | undefined;
+          if (!type) { fail('--type is required (habit or task)'); return; }
+          state = unassignAgent(state, type, id, text);
+          result = { unassigned: true };
+          modified = true;
+          break;
+        }
+
+        default:
+          fail(`Unknown command: agent ${command}`);
+      }
     } else {
-      fail(`Unknown entity: ${entity}. Expected: state, task, habit`);
+      fail(`Unknown entity: ${entity}. Expected: state, task, habit, agent`);
     }
 
     if (modified) {
