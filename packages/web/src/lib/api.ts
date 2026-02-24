@@ -108,12 +108,13 @@ export async function* streamChat(
 
 export async function fetchCoachMessage(
   systemPrompt: string,
-  messages: Array<{ role: string; content: string }>
+  messages: Array<{ role: string; content: string }>,
+  agentId?: string
 ): Promise<string> {
   const res = await fetch('/api/coach-message', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ systemPrompt, messages }),
+    body: JSON.stringify({ systemPrompt, messages, agentId }),
   });
   if (!res.ok) throw new Error('Coach message request failed');
   const data = await res.json();

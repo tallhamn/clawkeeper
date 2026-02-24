@@ -38,7 +38,13 @@ const OPENCLAW_TOKEN = process.env.OPENCLAW_TOKEN || '';
 app.use(express.json());
 
 // Serve built client in production
-app.use(express.static(path.join(__dirname, 'dist')));
+app.use(express.static(path.join(__dirname, 'dist'), {
+  setHeaders: (res, filePath) => {
+    if (filePath.endsWith('.html')) {
+      res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+    }
+  },
+}));
 
 // ── Undo state ──
 let previousState: AppState | null = null;
@@ -444,19 +450,39 @@ app.post('/api/coach-message', async (req, res) => {
   }
 
   try {
-    const { systemPrompt, messages } = req.body;
+    const { systemPrompt, messages, agentId } = req.body;
+    const agent = agentId || 'main';
+
+    // Read agent personality
+    let agentPersonality = '';
+    try {
+      const agentsOutput = execSync('openclaw agents list --json', { encoding: 'utf-8', timeout: 5000 });
+      const agentsList = JSON.parse(agentsOutput) as Array<{ id: string; workspace?: string }>;
+      const agentInfo = agentsList.find(a => a.id === agent);
+      if (agentInfo?.workspace) {
+        const soulPath = path.join(agentInfo.workspace, 'SOUL.md');
+        if (fs.existsSync(soulPath)) agentPersonality = fs.readFileSync(soulPath, 'utf-8') + '\n\n';
+      }
+    } catch {
+      // proceed without personality
+    }
+
+    const fullSystemPrompt = agentPersonality
+      ? `${agentPersonality}---\n\n${systemPrompt}`
+      : systemPrompt;
+
     const ocRes = await fetch(`${OPENCLAW_URL}/v1/chat/completions`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         Authorization: `Bearer ${OPENCLAW_TOKEN}`,
-        'x-openclaw-agent-id': 'main',
-        'x-openclaw-session-key': 'clawkeeper-coach',
+        'x-openclaw-agent-id': agent,
+        'x-openclaw-session-key': `clawkeeper-coach-${agent}`,
       },
       body: JSON.stringify({
         model: 'claude-sonnet-4-20250514',
         stream: false,
-        messages: [{ role: 'system', content: systemPrompt }, ...messages],
+        messages: [{ role: 'system', content: fullSystemPrompt }, ...messages],
       }),
     });
 

@@ -38,7 +38,8 @@ function App() {
 
   const { message: coachMessage, triggerReinforcement } = useCoachMessage(
     state?.habits ?? [],
-    currentHour
+    currentHour,
+    agents
   );
   const { shouldShow: showSetupPrompt, dismiss: dismissSetupPrompt } = useSetupPrompt();
 
@@ -139,6 +140,16 @@ function App() {
   useEffect(() => {
     api.fetchAgents().then(setAgents).catch(() => {});
   }, []);
+
+  // Lock body scroll when chat is open (mobile: full overlay)
+  useEffect(() => {
+    if (chatOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => { document.body.style.overflow = ''; };
+  }, [chatOpen]);
 
   // Mutate helper: calls API, updates state, shows undo
   const mutate = useCallback((message: string, action: () => Promise<AppState>) => {

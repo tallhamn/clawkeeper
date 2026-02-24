@@ -32,7 +32,7 @@ function getNextScheduled(habit: Habit, currentHour: number): number | null {
   return best;
 }
 
-export function useCoachMessage(habits: Habit[], currentHour: number) {
+export function useCoachMessage(habits: Habit[], currentHour: number, agents?: Array<{ id: string; name?: string }>) {
   const [message, setMessage] = useState('');
   const [lastAction, setLastAction] = useState<LastAction | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
@@ -43,7 +43,6 @@ export function useCoachMessage(habits: Habit[], currentHour: number) {
     if (now - lastGeneratedRef.current < 30000) return;
     if (isGenerating) return;
     if (habits.length === 0) {
-      setMessage('Add a habit to get started.');
       return;
     }
 
@@ -86,7 +85,12 @@ export function useCoachMessage(habits: Habit[], currentHour: number) {
         availableHabits.length === 0 ? 'All habits resting \u2014 nothing to do right now' : null,
       ].filter(Boolean).join('\n');
 
-      const systemPrompt = `You are a concise personal coach. Generate ONE brief sentence (max 15 words) about the user's habit status right now.
+      // Pick a random agent for the coach message
+      const coachAgents = agents && agents.length > 0 ? agents : [{ id: 'main', name: 'Clawcus' }];
+      const pickedAgent = coachAgents[Math.floor(Math.random() * coachAgents.length)];
+      const agentName = pickedAgent.name || pickedAgent.id;
+
+      const systemPrompt = `Generate ONE short coaching nudge about the user's habits right now. MAXIMUM 120 characters (the name prefix will be added separately). No emojis, no exclamation marks.
 
 Context:
 ${timeContext}
@@ -105,8 +109,13 @@ Rules:
 
 Generate one message:`;
 
-      const response = await fetchCoachMessage(systemPrompt, [{ role: 'user', content: 'What should I know right now?' }]);
-      setMessage(response.trim().replace(/^["']|["']$/g, ''));
+      const response = await fetchCoachMessage(systemPrompt, [{ role: 'user', content: 'What should I know right now?' }], pickedAgent.id);
+      let text = response.trim().replace(/^["']|["']$/g, '');
+      // Enforce max length, truncate gracefully at word boundary
+      if (text.length > 120) {
+        text = text.slice(0, 117).replace(/\s+\S*$/, '') + '...';
+      }
+      setMessage(`${agentName}: ${text}`);
     } catch {
       // Fallback to static message
       const availableHabits = habits.filter(h => isHabitAvailable(h.lastCompleted, h.repeatIntervalHours, h.forcedAvailable));
