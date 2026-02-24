@@ -103,7 +103,7 @@ export async function* streamChat(
       }
     }
   } finally {
-    reader.releaseLock();
+    await reader.cancel();
   }
 }
 

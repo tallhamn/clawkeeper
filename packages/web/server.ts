@@ -410,8 +410,12 @@ app.post('/api/chat', async (req, res) => {
       ? `${agentPersonality}---\n\n${systemPrompt}`
       : systemPrompt;
 
+    const controller = new AbortController();
+    res.on('close', () => controller.abort());
+
     const ocRes = await fetch(`${OPENCLAW_URL}/v1/chat/completions`, {
       method: 'POST',
+      signal: controller.signal,
       headers: {
         'Content-Type': 'application/json',
         Authorization: `Bearer ${OPENCLAW_TOKEN}`,
@@ -426,7 +430,8 @@ app.post('/api/chat', async (req, res) => {
     });
 
     if (!ocRes.ok) {
-      res.status(ocRes.status).json({ error: `OpenClaw API error: ${ocRes.status}` });
+      const errBody = await ocRes.text().catch(() => '');
+      res.status(ocRes.status).json({ error: errBody || `OpenClaw API error: ${ocRes.status}` });
       return;
     }
 
@@ -443,7 +448,7 @@ app.post('/api/chat', async (req, res) => {
         res.write(decoder.decode(value, { stream: true }));
       }
     } finally {
-      reader.releaseLock();
+      await reader.cancel();
     }
     res.end();
   } catch (err: any) {
