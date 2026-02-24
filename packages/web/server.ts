@@ -438,7 +438,7 @@ app.post('/api/chat', async (req, res) => {
         'x-openclaw-session-key': `clawkeeper-chat-${agent}`,
       },
       body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
+        model: 'ollama/gpt-oss:120b',
         stream: true,
         messages: [{ role: 'system', content: fullSystemPrompt }, ...messages],
       }),
@@ -512,7 +512,7 @@ app.post('/api/coach-message', async (req, res) => {
         'x-openclaw-session-key': `clawkeeper-coach-${agent}-${Date.now()}`,
       },
       body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
+        model: 'ollama/gpt-oss:120b',
         stream: false,
         messages: [{ role: 'system', content: fullSystemPrompt }, ...messages],
       }),
@@ -546,7 +546,7 @@ app.post('/api/infer-hours', async (req, res) => {
         'x-openclaw-session-key': 'clawkeeper-infer',
       },
       body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
+        model: 'ollama/gpt-oss:120b',
         stream: false,
         messages: [
           { role: 'system', content: 'You are a helpful assistant. Return only valid JSON.' },
@@ -587,7 +587,7 @@ app.post('/api/infer-icons', async (req, res) => {
         'x-openclaw-session-key': 'clawkeeper-infer',
       },
       body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
+        model: 'ollama/gpt-oss:120b',
         stream: false,
         messages: [
           { role: 'system', content: 'You are a helpful assistant. Return only valid JSON.' },
