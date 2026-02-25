@@ -1,5 +1,6 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import type { AppState, Task, LLMAction } from '@clawkeeper/shared/src/types';
+import { createPollGuard } from './lib/pollGuard';
 import { APP_VERSION } from '@clawkeeper/shared/src/constants';
 import * as api from './lib/api';
 import { useCoachMessage } from './hooks/useCoachMessage';
@@ -32,6 +33,9 @@ function App() {
   const [showUndo, setShowUndo] = useState(false);
   const [undoMessage, setUndoMessage] = useState('');
   const undoTimer = useRef<ReturnType<typeof setTimeout>>();
+
+  // Suppress stale poll results after mutations
+  const pollGuard = useMemo(() => createPollGuard(3000), []);
 
   // Agents
   const [agents, setAgents] = useState<Array<{ id: string; name?: string }>>([]);
@@ -109,15 +113,16 @@ function App() {
       .catch((err) => { setError(err.message); setIsLoading(false); });
   }, []);
 
-  // Poll for changes every 3 seconds
+  // Poll for changes every 3 seconds, but skip if a mutation happened recently
   useEffect(() => {
     const interval = setInterval(() => {
+      if (!pollGuard.shouldPoll()) return;
       api.fetchState()
         .then((s) => setState(s))
         .catch(() => {});
     }, 3000);
     return () => clearInterval(interval);
-  }, []);
+  }, [pollGuard]);
 
   // Update current hour every minute
   useEffect(() => {
@@ -152,6 +157,7 @@ function App() {
 
   // Mutate helper: calls API, updates state, shows undo
   const mutate = useCallback((message: string, action: () => Promise<AppState>) => {
+    pollGuard.markMutation();
     setUndoMessage(message);
     setShowUndo(true);
     clearTimeout(undoTimer.current);
@@ -163,12 +169,14 @@ function App() {
 
   // Silent mutate (no undo bar)
   const silentMutate = useCallback((action: () => Promise<AppState>) => {
+    pollGuard.markMutation();
     action()
       .then((newState) => setState(newState))
       .catch((err) => setError(err.message));
   }, []);
 
   const handleUndo = useCallback(() => {
+    pollGuard.markMutation();
     api.undo()
       .then((newState) => setState(newState))
       .catch(() => {});

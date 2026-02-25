@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "concurrently -n api,vite -c blue,green \"tsx watch server.ts\" \"vite\"",
     "build": "vite build",
+    "test:run": "vitest run",
     "serve": "tsx server.ts",
     "preview": "vite preview"
   },

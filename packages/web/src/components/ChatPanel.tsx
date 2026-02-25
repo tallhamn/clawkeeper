@@ -91,14 +91,12 @@ The user will see approval buttons. Keep responses brief (2-3 paragraphs max).`;
 
 export function ChatPanel({ isOpen, onClose, habits, tasks, currentHour, onAction, agents }: ChatPanelProps) {
   const [selectedAgentId, setSelectedAgentId] = useState<string>(() => agents[0]?.id || 'main');
-  const [showAgentPicker, setShowAgentPicker] = useState(false);
   const [conversationsByAgent, setConversationsByAgent] = useState<Record<string, Message[]>>({});
   const [input, setInput] = useState('');
-  const [isTyping, setIsTyping] = useState(false);
-  const [streamingText, setStreamingText] = useState('');
+  const [typingByAgent, setTypingByAgent] = useState<Record<string, boolean>>({});
+  const [streamingByAgent, setStreamingByAgent] = useState<Record<string, string>>({});
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
-  const agentPickerRef = useRef<HTMLDivElement>(null);
 
   // Ensure selectedAgentId stays valid
   useEffect(() => {
@@ -115,6 +113,8 @@ export function ChatPanel({ isOpen, onClose, habits, tasks, currentHour, onActio
   });
 
   const messages = conversationsByAgent[selectedAgentId] || [getWelcomeMessage()];
+  const isTyping = typingByAgent[selectedAgentId] || false;
+  const streamingText = streamingByAgent[selectedAgentId] || '';
 
   const setMessages = (updater: Message[] | ((prev: Message[]) => Message[])) => {
     setConversationsByAgent(prev => {
@@ -149,29 +149,28 @@ export function ChatPanel({ isOpen, onClose, habits, tasks, currentHour, onActio
     if (isOpen) setTimeout(() => inputRef.current?.focus(), 100);
   }, [isOpen]);
 
-  // Close agent picker on outside click
-  useEffect(() => {
-    if (!showAgentPicker) return;
-    const handler = (e: MouseEvent) => {
-      if (agentPickerRef.current && !agentPickerRef.current.contains(e.target as Node)) {
-        setShowAgentPicker(false);
-      }
-    };
-    document.addEventListener('mousedown', handler);
-    return () => document.removeEventListener('mousedown', handler);
-  }, [showAgentPicker]);
-
   const selectedAgent = agents.find(a => a.id === selectedAgentId);
 
   const handleSend = async () => {
     if (!input.trim() || isTyping) return;
 
+    // Capture agent at send time so response goes to the right conversation
+    const agentId = selectedAgentId;
+
+    const setAgentMessages = (updater: Message[] | ((prev: Message[]) => Message[])) => {
+      setConversationsByAgent(prev => {
+        const current = prev[agentId] || [getWelcomeMessage()];
+        const next = typeof updater === 'function' ? updater(current) : updater;
+        return { ...prev, [agentId]: next };
+      });
+    };
+
     const userMessage: Message = { id: nextId(), role: 'user', text: input.trim() };
-    setMessages(prev => [...prev, userMessage]);
+    setAgentMessages(prev => [...prev, userMessage]);
     const userInput = input.trim();
     setInput('');
-    setIsTyping(true);
-    setStreamingText('');
+    setTypingByAgent(prev => ({ ...prev, [agentId]: true }));
+    setStreamingByAgent(prev => ({ ...prev, [agentId]: '' }));
 
     try {
       const conversationHistory = messages
@@ -184,21 +183,21 @@ export function ChatPanel({ isOpen, onClose, habits, tasks, currentHour, onActio
       for await (const chunk of streamChat(systemPrompt, [
         ...conversationHistory,
         { role: 'user', content: userInput },
-      ], selectedAgentId)) {
+      ], agentId)) {
         fullResponse += chunk;
-        setStreamingText(fullResponse);
+        setStreamingByAgent(prev => ({ ...prev, [agentId]: fullResponse }));
       }
 
       const actions = parseActionsFromResponse(fullResponse, habits, tasks);
 
-      setIsTyping(false);
-      setStreamingText('');
-      setMessages(prev => [...prev, { id: nextId(), role: 'assistant', text: fullResponse, actions }]);
+      setTypingByAgent(prev => ({ ...prev, [agentId]: false }));
+      setStreamingByAgent(prev => ({ ...prev, [agentId]: '' }));
+      setAgentMessages(prev => [...prev, { id: nextId(), role: 'assistant', text: fullResponse, actions }]);
     } catch (error) {
-      setIsTyping(false);
-      setStreamingText('');
+      setTypingByAgent(prev => ({ ...prev, [agentId]: false }));
+      setStreamingByAgent(prev => ({ ...prev, [agentId]: '' }));
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      setMessages(prev => [...prev, { id: nextId(), role: 'system', text: `Sorry, I encountered an error. ${errorMessage}` }]);
+      setAgentMessages(prev => [...prev, { id: nextId(), role: 'system', text: `Sorry, I encountered an error. ${errorMessage}` }]);
     }
   };
 
@@ -208,40 +207,28 @@ export function ChatPanel({ isOpen, onClose, habits, tasks, currentHour, onActio
     <>
       <div className="fixed inset-0 bg-black/20 z-40" onClick={onClose} />
       <div className="fixed inset-y-0 right-0 w-full sm:w-96 bg-tokyo-bg shadow-2xl z-50 flex flex-col border-l border-tokyo-border">
-        <div className="px-4 py-3 border-b border-tokyo-border flex items-center justify-between bg-tokyo-surface">
-          <div className="relative" ref={agentPickerRef}>
-            <button
-              onClick={() => agents.length > 1 && setShowAgentPicker(!showAgentPicker)}
-              className={`flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider transition-colors ${
-                agents.length > 1 ? 'text-tokyo-text-muted active:text-tokyo-text' : 'text-tokyo-text-muted cursor-default'
-              }`}
-            >
-              <span>{selectedAgent?.name || selectedAgentId}</span>
-              {agents.length > 1 && (
-                <svg className={`w-3 h-3 transition-transform ${showAgentPicker ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-                </svg>
-              )}
-            </button>
-            {showAgentPicker && (
-              <div className="absolute left-0 top-full mt-1 bg-tokyo-surface border border-tokyo-border rounded-lg shadow-lg z-20 py-1 min-w-[140px]">
-                {agents.map(agent => (
-                  <button
-                    key={agent.id}
-                    onClick={() => { setSelectedAgentId(agent.id); setShowAgentPicker(false); }}
-                    className={`w-full text-left px-3 py-2 text-xs transition-colors ${
-                      agent.id === selectedAgentId
-                        ? 'text-tokyo-blue bg-tokyo-blue-bg'
-                        : 'text-tokyo-text active:bg-tokyo-surface-alt'
-                    }`}
-                  >
-                    {agent.name || agent.id}
-                  </button>
-                ))}
-              </div>
-            )}
+        <div className="px-3 py-2 border-b border-tokyo-border flex items-center gap-2 bg-tokyo-surface">
+          <div className="flex-1 flex items-center gap-1.5 overflow-x-auto no-scrollbar">
+            {agents.map(agent => (
+              <button
+                key={agent.id}
+                onClick={() => setSelectedAgentId(agent.id)}
+                className={`flex-shrink-0 px-2.5 py-1 rounded-full text-xs font-medium transition-colors ${
+                  agent.id === selectedAgentId
+                    ? 'bg-tokyo-blue text-white'
+                    : typingByAgent[agent.id]
+                      ? 'bg-tokyo-surface-alt text-tokyo-text-muted'
+                      : 'text-tokyo-text-dim active:text-tokyo-text-muted'
+                }`}
+              >
+                {agent.name || agent.id}
+                {typingByAgent[agent.id] && agent.id !== selectedAgentId && (
+                  <span className="ml-1 opacity-60">...</span>
+                )}
+              </button>
+            ))}
           </div>
-          <button onClick={onClose} className="p-2 text-tokyo-text-muted active:text-tokyo-text rounded-lg transition-colors">
+          <button onClick={onClose} className="p-1.5 text-tokyo-text-muted active:text-tokyo-text rounded-lg transition-colors flex-shrink-0">
             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
             </svg>

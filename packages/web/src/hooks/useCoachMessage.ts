@@ -136,6 +136,11 @@ Generate one message:`;
     }
   };
 
+  // Compute a fingerprint of habit availability so we can detect state changes
+  const availabilityKey = habits.map(h =>
+    `${h.id}:${isHabitAvailable(h.lastCompleted, h.repeatIntervalHours, h.forcedAvailable) ? 1 : 0}`
+  ).join(',');
+
   useEffect(() => {
     const restingCount = habits.filter(h =>
       h.lastCompleted &&
@@ -150,10 +155,12 @@ Generate one message:`;
         `Nice. ${lastAction.text} checked off.`,
       ];
       setMessage(messages[Math.floor(Math.random() * messages.length)]);
+      // Reset cooldown so next generation uses fresh state
+      lastGeneratedRef.current = 0;
     } else {
       generateLLMMessage();
     }
-  }, [habits, currentHour, lastAction]);
+  }, [availabilityKey, currentHour, lastAction]);
 
   const triggerReinforcement = (habitText: string, habitTotalCompletions: number) => {
     setLastAction({ text: habitText, totalCompletions: habitTotalCompletions });
